@@ -1,0 +1,31 @@
+# Verity AI家庭CFO · Cloudflare Pages 响应头（上线契约）
+#
+# 本文件的 CSP 与 web/zh.html 里 <meta http-equiv="Content-Security-Policy">
+# **逐字节相同**，由 tests/test_cloudflare_delivery.py 钉住：
+#   * 页面自己声明了一份策略，服务端再下发另一份不同策略时，浏览器会按交集执行，
+#     结果是「两份策略同时生效」（S-27-09 踩过这个坑）。两份完全相同 ⇒ 交集就是它本身，
+#     既不会悄悄收紧到把引擎（blob: / wasm-unsafe-eval）打死，也不会出现口径分歧。
+#   * api/server.py 的服务端通道走的是更严的 sha256 白名单那份（_zh_console_csp），
+#     那份依赖服务端注入内联脚本并现场算哈希，静态 Pages 通道无法复现，故不在此复制。
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'
+
+# 服务工作者与版本文件绝不能被缓存：否则用户会一直跑旧构建（T-E0-030 版本自适应失效）。
+/sw.js
+  Cache-Control: no-cache
+
+/version.json
+  Cache-Control: no-cache
+
+# 入口页不缓存，保证「打开即最新」；引擎与 Pyodide 本体是带哈希校验的静态资源，可以长缓存。
+/index.html
+  Cache-Control: no-cache
+
+/zh.html
+  Cache-Control: no-cache
+
+/pyodide/*
+  Cache-Control: public, max-age=31536000, immutable

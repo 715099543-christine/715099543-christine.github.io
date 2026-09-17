@@ -1,0 +1,160 @@
+{
+  "profile_id": "ZH-DEMO-001",
+  "currency": "CNY",
+  "design_note": "中文示范家庭：六域保护全部记录，用于展示完整用户路径。",
+  "members": [
+    {
+      "member_id": "adult_1",
+      "age": 40,
+      "role": "primary_earner",
+      "dependents": 1,
+      "annual_income": 420000,
+      "income_stability": "high"
+    },
+    {
+      "member_id": "adult_2",
+      "age": 38,
+      "role": "secondary_earner",
+      "dependents": 1,
+      "annual_income": 240000,
+      "income_stability": "high"
+    }
+  ],
+  "annual_expenses_essential": 240000,
+  "annual_expenses_discretionary": 72000,
+  "assets": [
+    {
+      "asset_id": "ZH-DEMO-001_cash",
+      "kind": "cash",
+      "value": 420000,
+      "liquidity": "immediate",
+      "note": "应急现金",
+      "currency": "CNY"
+    },
+    {
+      "asset_id": "ZH-DEMO-001_bond",
+      "kind": "bond",
+      "value": 300000,
+      "liquidity": "near",
+      "note": "债券与债券基金",
+      "currency": "CNY"
+    },
+    {
+      "asset_id": "ZH-DEMO-001_index",
+      "kind": "global_index",
+      "value": 520000,
+      "liquidity": "near",
+      "note": "",
+      "currency": "CNY"
+    },
+    {
+      "asset_id": "ZH-DEMO-001_equity",
+      "kind": "equity",
+      "value": 260000,
+      "liquidity": "near",
+      "note": "",
+      "currency": "CNY"
+    },
+    {
+      "asset_id": "ZH-DEMO-001_home",
+      "kind": "illiquid",
+      "value": 1800000,
+      "liquidity": "cannot_touch",
+      "note": "自住房",
+      "currency": "CNY"
+    }
+  ],
+  "liabilities": [
+    {
+      "liability_id": "ZH-DEMO-001_mortgage",
+      "kind": "mortgage",
+      "balance": 620000,
+      "annual_rate": 0.038,
+      "mandatory_payment": 48000
+    }
+  ],
+  "protection": [
+    {
+      "protection_id": "ZH-DEMO-001_life",
+      "kind": "life",
+      "coverage": 8000000,
+      "annual_premium": 9600,
+      "exclusions": []
+    },
+    {
+      "protection_id": "ZH-DEMO-001_disability",
+      "kind": "disability",
+      "coverage": 400000,
+      "annual_premium": 3200,
+      "exclusions": []
+    },
+    {
+      "protection_id": "ZH-DEMO-001_health",
+      "kind": "health",
+      "coverage": 600000,
+      "annual_premium": 4800,
+      "exclusions": []
+    },
+    {
+      "protection_id": "ZH-DEMO-001_liability",
+      "kind": "liability",
+      "coverage": 1000000,
+      "annual_premium": 900,
+      "exclusions": []
+    }
+  ],
+  "future_rigid_outflows": [
+    {
+      "outflow_id": "ZH-DEMO-001_edu",
+      "label": "子女教育金",
+      "amount": 300000,
+      "years_until_due": 6
+    }
+  ],
+  "legal_affairs": {
+    "will": {
+      "recorded": true,
+      "note": "遗嘱已订立，并指定未成年子女监护人。"
+    },
+    "beneficiary_designation": {
+      "recorded": true,
+      "note": "寿险与养老金受益人已更新。"
+    },
+    "guardianship": {
+      "recorded": true,
+      "note": "监护人在遗嘱中指定。"
+    },
+    "power_of_attorney": {
+      "recorded": true,
+      "note": "配偶持有持久财务授权委托书。"
+    }
+  },
+  "social_protection": {
+    "social_insurance": {
+      "recorded": true,
+      "note": "单位缴纳社保，缴费记录已核对。"
+    },
+    "medical_insurance": {
+      "recorded": true,
+      "note": "基本医保＋单位补充医疗。"
+    },
+    "public_pension": {
+      "recorded": true,
+      "note": "基本养老金对账单已核对于本年度。"
+    },
+    "employment_support": {
+      "recorded": true,
+      "note": "失业保险缴费正常。"
+    }
+  },
+  "investment_horizon_years": 18,
+  "target_annual_return": 0.06,
+  "annual_goal": {
+    "year": 2026,
+    "recorded_as_of": "2026-09-16",
+    "recorded_net_gain": 118000,
+    "locked_profit": 0,
+    "note": "示范家庭已记录本年度已实现净收益，用于展示年度目标进度与止盈状态机（T-E0-044）。"
+  },
+  "max_tolerable_loss_pct": 0.25
+}

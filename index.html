@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script data-verity="openapi">window.VERITY_OPENAPI = {
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Verity 家庭财富引擎 E0 接口契约",
+    "version": "0.2.0",
+    "summary": "家庭财富结果的决策支持接口：先算清楚什么会摧毁这个家庭，再谈方案。",
+    "description": "Verity 是家庭财富结果的决策支持引擎：先理解家庭如何生活、赚钱与承担家庭责任，再计算哪些风险会摧毁这个家庭，最后才寻找能穿过这些风险的方案。\n\n本契约只描述接口的形状与语义，不构成任何投资、法律、税务或保险建议；引擎不推荐任何具体证券、基金、保险产品或机构，不执行任何交易。\n\n三条与实现绑定的硬约束：\n1. 拒绝也是成功：判定为拒绝作答时，返回成功状态码与完整证据，而不是传输层错误；\n2. 永不抛出：输入畸形时以失败关闭作答，不返回服务端错误；\n3. 无生产权限：每个响应都带安全姿态响应头，见下方响应头清单。"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "同源部署：静态预览与控制台由同一个根路径提供。"
+    }
+  ],
+  "tags": [
+    {
+      "name": "系统",
+      "description": "存活自检、接口契约与安全姿态。"
+    },
+    {
+      "name": "家庭数据",
+      "description": "读取样本家庭档案与校验家庭输入。"
+    },
+    {
+      "name": "决策",
+      "description": "运行引擎、批量复核与证据审计。"
+    },
+    {
+      "name": "合作与反馈",
+      "description": "对外审计规格与用户反馈。此类接口不代表已生效的合作关系。"
+    }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "存活与安全姿态自检",
+        "operationId": "getHealthz",
+        "description": "返回服务是否存活、引擎版本、合成样本家庭数量、本会话已记录的结果数，以及生产权限与发布闸门的当前值。这是唯一不需要读取家庭数据的接口；它只接受读取，不写入任何状态。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/openapi.json": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "本接口契约的机器可读描述",
+        "operationId": "getOpenApiDocument",
+        "description": "返回 OpenAPI 3.1 描述文件本体。文档由路由表生成，因此描述的路径与服务器真正接受的路径同源，不会各自漂移。扩展字段 x-verity 记录引擎版本、产品版本、安全姿态与版本化政策。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiDocument"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/docs": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "接口契约的可读页面",
+        "operationId": "getApiDocs",
+        "description": "把同一份描述文件渲染成可直接阅读的页面，含端点清单、字段约束与安全姿态。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiDocsPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/contract": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "机器可读的能力清单与阈值",
+        "operationId": "getContract",
+        "description": "返回判定取值、动作取值、必填字段、压力情景清单、判定阈值与端点清单，供前端与集成方在启动时校验能力是否一致。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/synthetic": {
+      "get": {
+        "tags": [
+          "家庭数据"
+        ],
+        "summary": "列出全部合成样本家庭",
+        "operationId": "listSyntheticHouseholds",
+        "description": "列出样本家庭的编号、设计分层与设计预期判定，不返回完整档案。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyntheticIndex"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "依赖的本机合成样本数据集缺失。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/household/profile/{profile_id}": {
+      "get": {
+        "tags": [
+          "家庭数据"
+        ],
+        "summary": "按编号读取一份完整家庭档案",
+        "operationId": "getHouseholdProfile",
+        "description": "返回合成样本家庭或示范家庭的完整档案原文，用于复核引擎输入。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdProfileRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "目标资源不存在（编号未知，或运行编号已随会话结束失效）。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "依赖的本机合成样本数据集缺失。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profile_id",
+            "in": "path",
+            "required": true,
+            "description": "家庭档案编号，例如 SYN-N01 或 SYN-DP01。",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/v0/household/validate": {
+      "post": {
+        "tags": [
+          "家庭数据"
+        ],
+        "summary": "校验家庭档案是否可被引擎接受",
+        "operationId": "validateHouseholdProfile",
+        "description": "只做校验，不运行引擎。返回是否有效、缺失的必填项、前后不一致项与提示项，并附证据块。校验失败同样是 200，由 valid=false 表达。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体不是合法 JSON、不是对象、为空或超出体积上限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/analyze": {
+      "post": {
+        "tags": [
+          "决策"
+        ],
+        "summary": "对一份家庭档案运行完整决策引擎",
+        "operationId": "analyzeHousehold",
+        "description": "这是产品的主接口：输入一份家庭档案，返回判定、分层、安全性、可行性、配置、压力测试、今日行动、保险审计、风险排序、趋势、危险时间轴、证据与审计记录。结果按服务端生成的运行编号记入内存，可用证据接口复核；请求体里的 run_id 一律忽略。判定为 ABSTAIN 时仍返回 200。写接口需要认证：部署方声明写令牌后必须携带令牌，未声明时只有本机回环来源可以写入；超过并发或频率上限时返回 429 与 Retry-After。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体不是合法 JSON、不是对象、为空或超出体积上限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          }
+        },
+        "x-verity-state-change": true
+      }
+    },
+    "/api/v0/cohort/run": {
+      "post": {
+        "tags": [
+          "决策"
+        ],
+        "summary": "对全部合成样本家庭批量运行引擎",
+        "operationId": "runCohort",
+        "description": "对 50 个样本家庭逐个运行引擎，返回逐户判定与「是否与设计预期一致」的汇总。每户的运行编号由服务端生成，客户端不能指定。写接口需要认证，超限返回 429。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohortRunResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "依赖的本机合成样本数据集缺失。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CohortRequest"
+              }
+            }
+          }
+        },
+        "x-verity-state-change": true
+      }
+    },
+    "/api/v0/evidence/{run_id}": {
+      "get": {
+        "tags": [
+          "决策"
+        ],
+        "summary": "按运行编号复核证据与审计链",
+        "operationId": "getEvidence",
+        "description": "返回该次运行的证据块、审计记录与哈希链是否自洽。结果只在本次会话的内存中保留，进程重启即失效（服务端不落盘家庭资料）。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceLookup"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "目标资源不存在（编号未知，或运行编号已随会话结束失效）。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "运行编号，来自 analyze 或 cohort/run 的返回。",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/v0/partner/audit-schema": {
+      "get": {
+        "tags": [
+          "合作与反馈"
+        ],
+        "summary": "对外审计接口的规格说明",
+        "operationId": "getPartnerAuditSchema",
+        "description": "描述把审计记录交给持牌合作方时的接口规格与数据最小化约束。这是规格而非已生效协议：Verity 目前不持有牌照，也未签署任何合作方协议。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerAuditSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/feedback": {
+      "post": {
+        "tags": [
+          "合作与反馈"
+        ],
+        "summary": "记录一条用户反馈",
+        "operationId": "submitFeedback",
+        "description": "把反馈原文按行追加到本机证据目录，不加任何身份标识。",
+        "responses": {
+          "200": {
+            "description": "成功。业务层的拒绝（ABSTAIN）也走 200，并带完整证据。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体不是合法 JSON、不是对象、为空或超出体积上限。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "见 schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          }
+        },
+        "x-verity-state-change": true
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HouseholdProfile": {
+        "type": "object",
+        "description": "家庭档案。必填项缺失不会导致接口报错，而是让引擎以 ABSTAIN 作答。",
+        "required": [
+          "members",
+          "annual_expenses_essential",
+          "assets",
+          "investment_horizon_years",
+          "target_annual_return",
+          "max_tolerable_loss_pct"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "description": "档案编号，可选；引擎会回显。"
+          },
+          "currency": {
+            "type": "string",
+            "description": "计价币种代码，例如 USD、CNY。"
+          },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "description": "家庭成员。每人的收入与收入稳定性决定压力情景能否测算。",
+            "items": {
+              "type": "object",
+              "required": [
+                "annual_income"
+              ],
+              "properties": {
+                "member_id": {
+                  "type": "string"
+                },
+                "age": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "role": {
+                  "type": "string",
+                  "examples": [
+                    "primary_earner",
+                    "partner",
+                    "dependent"
+                  ]
+                },
+                "dependents": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "annual_income": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "income_stability": {
+                  "type": "string",
+                  "enum": [
+                    "high",
+                    "medium",
+                    "low"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "annual_expenses_essential": {
+            "type": "number",
+            "minimum": 0,
+            "description": "每年**必要**支出。生存天数与生存底线都建立在这个数字上。"
+          },
+          "annual_expenses_discretionary": {
+            "type": "number",
+            "minimum": 0,
+            "description": "每年可选支出，可压缩。"
+          },
+          "assets": {
+            "type": "array",
+            "description": "资产清单。流动性决定它能否计入生存底线。",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "value"
+              ],
+              "properties": {
+                "asset_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "cash",
+                    "bond",
+                    "global_index",
+                    "equity",
+                    "gold",
+                    "option_protection",
+                    "insurance_linked",
+                    "illiquid"
+                  ]
+                },
+                "value": {
+                  "type": "number"
+                },
+                "liquidity": {
+                  "type": "string",
+                  "enum": [
+                    "immediate",
+                    "near",
+                    "cannot_touch"
+                  ]
+                },
+                "note": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "liabilities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "balance"
+              ],
+              "properties": {
+                "liability_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "mortgage",
+                    "consumer",
+                    "margin",
+                    "student",
+                    "other"
+                  ]
+                },
+                "balance": {
+                  "type": "number"
+                },
+                "annual_rate": {
+                  "type": "number"
+                },
+                "mandatory_payment": {
+                  "type": "number",
+                  "description": "每年强制还款额，参与债务压力比。"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "protection": {
+            "type": "array",
+            "description": "已记录的保障。保险只是综合保护方案中的一个模块，不是产品中心。",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "coverage"
+              ],
+              "properties": {
+                "protection_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "life",
+                    "disability",
+                    "health",
+                    "property",
+                    "liability"
+                  ]
+                },
+                "coverage": {
+                  "type": "number"
+                },
+                "annual_premium": {
+                  "type": "number"
+                },
+                "exclusions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "future_rigid_outflows": {
+            "type": "array",
+            "description": "未来刚性支出（教育、赡养等），进入近期待履行义务层。",
+            "items": {
+              "type": "object",
+              "required": [
+                "amount",
+                "years_until_due"
+              ],
+              "properties": {
+                "outflow_id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "years_until_due": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "investment_horizon_years": {
+            "type": "number",
+            "minimum": 0
+          },
+          "target_annual_return": {
+            "type": "number",
+            "description": "目标年化收益，用于可行性判定。"
+          },
+          "max_tolerable_loss_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "legal_affairs": {
+            "type": "object",
+            "description": "法律安排（遗嘱、受益人、监护、授权等）记录状态。",
+            "additionalProperties": true
+          },
+          "social_protection": {
+            "type": "object",
+            "description": "社会保障记录状态（社保、医保、养老金、失业保障）。",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "ValidateRequest": {
+        "type": "object",
+        "description": "校验请求。既可直接传档案本体，也可包在 profile 字段里。",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/HouseholdProfile"
+          }
+        },
+        "additionalProperties": true
+      },
+      "AnalyzeRequest": {
+        "type": "object",
+        "description": "分析请求。既可直接传档案本体，也可包在 profile 字段里。",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/HouseholdProfile"
+          },
+          "run_id": {
+            "type": "string",
+            "deprecated": true,
+            "description": "已忽略：运行编号由服务端生成，这里的取值不参与取证，也无法用于覆盖或伪造既有审计记录（T-E0-008 H-02）。"
+          }
+        },
+        "additionalProperties": true
+      },
+      "CohortRequest": {
+        "type": "object",
+        "description": "批量运行请求，当前无需任何字段；传空对象即可。",
+        "additionalProperties": true
+      },
+      "FeedbackRequest": {
+        "type": "object",
+        "description": "反馈内容。不加任何身份标识，按行追加到本机证据目录。",
+        "additionalProperties": true
+      },
+      "Evidence": {
+        "type": "object",
+        "description": "证据块：说明这个结论由什么数据、什么方法、什么假设得出。",
+        "properties": {
+          "evidence_status": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "PARTIAL",
+              "INSUFFICIENT"
+            ]
+          },
+          "algorithm_version": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supports": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputs_digest": {
+            "type": "string",
+            "description": "输入档案的规范 JSON 摘要。"
+          },
+          "output_digest": {
+            "type": "string",
+            "description": "引擎在取证时写下的输出正文规范 JSON 摘要（覆盖引擎内部中间态）。要检测结果正文章节被篡改，请复核 audit.payload_digest（T-E0-008 F-05）。"
+          },
+          "computed_at_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "record_hash": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "AuditRecord": {
+        "type": "object",
+        "description": "审计记录：以 prev_hash 串联成哈希链，任何改动都会断链。",
+        "properties": {
+          "sequence": {
+            "type": "integer"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "recorded_at_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "algorithm_version": {
+            "type": "string"
+          },
+          "payload_digest": {
+            "type": "string"
+          },
+          "prev_hash": {
+            "type": "string",
+            "description": "上一条记录哈希；创世记录为 64 个 0。"
+          },
+          "record_hash": {
+            "type": "string"
+          },
+          "risk_notice": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Verdict": {
+        "type": "string",
+        "enum": [
+          "PASS",
+          "REVIEW",
+          "REFUSE",
+          "ABSTAIN"
+        ],
+        "description": "总体判定。ABSTAIN 表示证据不足或自相矛盾，引擎拒绝作答——这是能力而不是故障。"
+      },
+      "Action": {
+        "type": "string",
+        "description": "今日行动码。机器码保持可审计，中文含义见 /api/v0/contract 的 actions 字段。"
+      },
+      "AnalysisResult": {
+        "type": "object",
+        "description": "一次完整引擎运行的结果。任何一项都不依赖网络，可离线复算。",
+        "required": [
+          "profile_id",
+          "run_id",
+          "algorithm_version",
+          "verdict",
+          "evidence",
+          "audit"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "algorithm_version": {
+            "type": "string"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "layers": {
+            "type": "object",
+            "description": "五层资金分层：生存 / 近期待履行义务 / 保障 / 长期增长 / 高风险机会。",
+            "additionalProperties": true
+          },
+          "safety": {
+            "type": "object",
+            "description": "安全性算术：生存天数、现金缺口、债务压力、不可动用资产、重大风险。",
+            "additionalProperties": true
+          },
+          "feasibility": {
+            "type": "object",
+            "description": "收益目标可行性判定与理由码。",
+            "additionalProperties": true
+          },
+          "allocation": {
+            "type": "object",
+            "description": "跨资产类别的配置模拟与保险需求。",
+            "additionalProperties": true
+          },
+          "stress": {
+            "type": "object",
+            "description": "八个强制压力情景的结果。",
+            "additionalProperties": true
+          },
+          "today": {
+            "type": "object",
+            "description": "今日行动，或 ABSTAIN。",
+            "additionalProperties": true
+          },
+          "insurance": {
+            "type": "object",
+            "description": "把已记录保障与已记录需求做审计对照。",
+            "additionalProperties": true
+          },
+          "protection": {
+            "type": "object",
+            "description": "跨现金、资产、保险、债务、法律与社会保障的综合保护方案。",
+            "additionalProperties": true
+          },
+          "risk_ranking": {
+            "type": "object",
+            "description": "风险排序与排序方法说明。",
+            "additionalProperties": true
+          },
+          "trend": {
+            "type": "object",
+            "description": "多月度现金流与资产负债趋势，不假设任何投资收益。",
+            "additionalProperties": true
+          },
+          "timeline": {
+            "type": "object",
+            "description": "八个压力情景下「第几个月击穿现金底线」。",
+            "additionalProperties": true
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "audit": {
+            "$ref": "#/components/schemas/AuditRecord"
+          },
+          "risk_notice": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "ValidationResult": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "missing_required": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inconsistent": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          }
+        },
+        "additionalProperties": true
+      },
+      "SyntheticHouseholdSummary": {
+        "type": "object",
+        "properties": {
+          "profile_id": {
+            "type": "string"
+          },
+          "cohort": {
+            "type": "string"
+          },
+          "expected_verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "design_note": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "SyntheticIndex": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "households": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyntheticHouseholdSummary"
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "HouseholdProfileRecord": {
+        "type": "object",
+        "properties": {
+          "profile_id": {
+            "type": "string"
+          },
+          "cohort": {
+            "type": "string"
+          },
+          "expected_verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "design_note": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/HouseholdProfile"
+          }
+        },
+        "additionalProperties": true
+      },
+      "CohortRunResult": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "verdict_summary": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "all_match_design": {
+            "type": "boolean"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "EvidenceLookup": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "audit": {
+            "$ref": "#/components/schemas/AuditRecord"
+          },
+          "audit_chain_valid": {
+            "type": "boolean"
+          },
+          "risk_notice": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "HealthReport": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "algorithm_version": {
+            "type": "string"
+          },
+          "production_authority": {
+            "type": "string",
+            "enum": [
+              "OFF"
+            ]
+          },
+          "release_gate": {
+            "type": "string",
+            "enum": [
+              "DENY"
+            ]
+          },
+          "synthetic_dataset_present": {
+            "type": "boolean"
+          },
+          "synthetic_household_count": {
+            "type": "integer"
+          },
+          "runs_recorded": {
+            "type": "integer"
+          },
+          "notice": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Contract": {
+        "type": "object",
+        "description": "能力清单：判定/动作取值、必填字段、资产类别、压力情景、阈值与端点清单。",
+        "additionalProperties": true
+      },
+      "OpenApiDocument": {
+        "type": "object",
+        "description": "本文件自身。",
+        "additionalProperties": true
+      },
+      "ApiDocsPage": {
+        "type": "string",
+        "description": "可直接阅读的接口契约页面。"
+      },
+      "PartnerAuditSchema": {
+        "type": "object",
+        "description": "对外审计接口规格。当前仅为规格：没有牌照、没有已签署的合作方协议。",
+        "additionalProperties": true
+      },
+      "FeedbackReceipt": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "stored": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Error": {
+        "type": "object",
+        "description": "错误响应。业务层的「拒绝」不走这里，走 200 + verdict=ABSTAIN。",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "x-verity": {
+    "api_version": "v0",
+    "api_contract_version": "0.2.0",
+    "product_version": "e0.25.0",
+    "algorithm_version": "e0.4.0",
+    "production_authority": "OFF",
+    "release_gate": "DENY",
+    "required_profile_fields": [
+      "members",
+      "annual_expenses_essential",
+      "assets",
+      "investment_horizon_years",
+      "target_annual_return",
+      "max_tolerable_loss_pct"
+    ],
+    "asset_classes": [
+      "cash",
+      "bond",
+      "global_index",
+      "equity",
+      "gold",
+      "option_protection"
+    ],
+    "stress_scenarios": [
+      "income_interruption",
+      "equity_crash",
+      "rate_change",
+      "medical_shock",
+      "fx_change",
+      "inflation_spiral",
+      "income_concentration",
+      "combined_multi_risk"
+    ],
+    "response_headers": {
+      "X-Verity-Authority": "当前生产权限，固定为 OFF。",
+      "X-Verity-Release-Gate": "当前发布闸门，固定为 DENY。",
+      "X-Verity-Algorithm-Version": "作答所用的引擎版本。",
+      "X-Verity-Run-Id": "服务端为本次运行生成的运行编号；请求体里的同名字段一律忽略。"
+    },
+    "write_protection": {
+      "authentication": "写接口默认只接受本机回环来源；部署方声明写令牌后，所有写请求都必须携带同一个令牌（请求头或 Bearer 令牌），缺失或错误一律 403。",
+      "rate_limit": "写接口按客户端地址使用令牌桶限速，超过上限返回 429 与 Retry-After；服务端并发达到上限时同样返回 429，不会静默丢弃请求。",
+      "audit_appendix": "每次运行都追加写入审计总账并按哈希链串联；同一运行编号重复写入会被拒绝，不会覆盖既有记录。"
+    },
+    "guarantees": [
+      "同一份档案必然得到同一个判定；运行编号由服务端生成，客户端传入值不参与取证。",
+      "输入畸形不抛异常，以失败关闭的 ABSTAIN 作答。",
+      "每一次结果都带证据块与哈希链审计记录。",
+      "无出站网络访问；只处理虚拟与样本数据。",
+      "不推荐任何具体证券、基金、保险产品或机构。"
+    ],
+    "versioning": {
+      "scheme": "主版本段写在接口路径里，当前为 /api/v0；契约修订号见文档信息字段。",
+      "stability": "v0 期间可能出现向后兼容的新增字段与新增端点；已有字段的含义与类型不再改变。",
+      "breaking_change": "破坏性变更只能发布新的主版本段（例如 /api/v1），v0 保持可用直到显式下线。",
+      "deprecation": "弃用先在本文档标注弃用标记与替代端点，并至少保留一个契约修订号后才移除。",
+      "client_guidance": "集成方应忽略未知字段，并分别处理客户端错误与服务端错误；不要把拒绝作答当成错误。"
+    },
+    "founder_takeover_required": [
+      "签署合作方协议",
+      "连接真实银行、券商或保险账户",
+      "推荐具体证券、基金、保险公司或产品",
+      "执行交易或持有客户资金"
+    ]
+  }
+};</script>
+<script data-verity="i18n">window.VERITY_I18N = {
+  "schema": "verity-i18n-zh-v1",
+  "note": "中文控制台的「中文优先 + 机器码保留」翻译契约。引擎输出英文原文是不可变审计证据（保留在结果 JSON 与 #r-raw 中）；本文件只用于把渲染到页面上的句子翻译成中文，机器码（risk_id/reason_code/run_id）保持原样可见。pattern 为 JavaScript RegExp 源串，cn 为含 {0}{1} 占位符的中文模板；pattern 缺省表示整句静态翻译。",
+  "meta": {
+    "refuse_max_loss_floor": 0.15,
+    "refuse_min_survival_days": 90,
+    "high_target_return": 0.12,
+    "high_target_max_loss_required": 0.25,
+    "review_survival_days": 180,
+    "review_debt_pressure": 0.35,
+    "underinvested_growth_fraction": 0.2,
+    "rebalance_drift_threshold": 0.05
+  },
+  "safety": {
+    "liquidity_shortfall": {
+      "label_cn": "流动性缓冲低于审查线",
+      "pattern": "^Safety days ([\\d.]+) is below (\\d+)\\.$",
+      "cn": "生存天数 {0} 天低于 {1} 天审查线。"
+    },
+    "debt_service_undeterminable": {
+      "label_cn": "无法计算债务压力",
+      "cn": "存在债务偿付，但未记录家庭收入，无法计算债务压力。"
+    },
+    "debt_pressure": {
+      "label_cn": "债务偿付占收入比例过高，不安全",
+      "pattern": "^Debt pressure ([\\d.]+)% exceeds (\\d+)%\\.$",
+      "cn": "债务偿付占收入的 {0}%，超过 {1}% 的审查线。"
+    },
+    "illiquidity_concentration": {
+      "label_cn": "大部分财富在危机中无法动用",
+      "pattern": "^(\\d+)% of assets are untouchable\\.$",
+      "cn": "有 {0}% 的资产在危机中无法动用。"
+    },
+    "life_coverage_gap": {
+      "label_cn": "寿险保额低于家庭五年收入",
+      "pattern": "^Coverage ([\\d.]+) vs five-year income need ([\\d.]+)\\.$",
+      "cn": "保额 {0}，低于五年收入需求 {1}。"
+    },
+    "currency_exposure": {
+      "label_cn": "较大比例财富以外币计价",
+      "pattern": "^(\\d+)% of assets sit outside the reporting currency\\.$",
+      "cn": "有 {0}% 的资产不在记账币种之内。"
+    },
+    "no_growth_capacity": {
+      "label_cn": "没有可投入长期增长的剩余资本",
+      "cn": "生存、刚性责任与保护需求消耗了全部已记录资产。"
+    }
+  },
+  "feasibility": {
+    "verdict_meaning": {
+      "PASS": "目标在家庭可承受的风险预算之内，可以继续进行模拟推演。",
+      "REVIEW": "目标可能可行，但缓冲偏窄或证据需要人工复核。",
+      "REFUSE": "目标与这个家庭能够承受的生存底线结构性冲突。",
+      "ABSTAIN": "证据不足或自相矛盾；Verity 拒绝下判断。"
+    },
+    "by_code": {
+      "PROFILE_VALIDATION_ERROR": {
+        "pattern": "^Profile validation failed: ([A-Za-z_]+): (.*)$",
+        "cn": "档案校验失败：{0}：{1}"
+      },
+      "MISSING_REQUIRED_INPUT": {
+        "cn": "目标年化回报或最大可承受损失无法读成有效数字。"
+      },
+      "LOSS_TOLERANCE_BELOW_FLOOR": {
+        "pattern": "^Maximum tolerable loss ([.\\d]+)% is below the ([.\\d]+)% floor needed to hold any growth asset through a normal cycle\\.$",
+        "cn": "最大可承受损失 {0}% 低于 {1}% 的底线——持有任何增长资产穿越正常周期都需要这条底线。"
+      },
+      "SURVIVAL_DAYS_BELOW_FLOOR": {
+        "pattern": "^Safety days ([\\d.]+) are below the (\\d+)-day floor; the household survival floor is not protected\\.$",
+        "cn": "生存天数 {0} 天低于 {1} 天底线，家庭生存底线没有得到保护。"
+      },
+      "GOAL_EXCEEDS_RISK_BUDGET": {
+        "pattern": "^A target of ([.\\d]+)% requires accepting a loss budget of at least ([.\\d]+)%; the family's stated tolerance is ([.\\d]+)%\\.$",
+        "cn": "目标 {0}% 需要至少接受 {1}% 的损失预算；家庭陈述的容忍度为 {2}%。"
+      },
+      "SURVIVAL_BUFFER_THIN": {
+        "pattern": "^Safety days ([\\d.]+) are below the (\\d+)-day review threshold\\.$",
+        "cn": "生存天数 {0} 天低于 {1} 天审查阈值。"
+      },
+      "DEBT_PRESSURE_UNDETERMINABLE": {
+        "cn": "存在债务偿付但未记录家庭收入，无法核实债务压力。"
+      },
+      "DEBT_PRESSURE_HIGH": {
+        "pattern": "^Debt service consumes ([.\\d]+)% of gross income, above the ([.\\d]+)% review threshold\\.$",
+        "cn": "债务偿付占毛收入的 {0}%，高于 {1}% 的审查阈值。"
+      },
+      "SURVIVAL_LAYER_UNFUNDED": {
+        "cn": "已记录资产不足以完全覆盖生存基石与刚性责任层。"
+      },
+      "GOAL_WITHIN_RISK_BUDGET": {
+        "pattern": "^Safety days ([\\d.]+) clear the (\\d+)-day threshold and the ([.\\d]+)% target sits inside a ([.\\d]+)% loss budget\\.$",
+        "cn": "生存天数 {0} 天高于 {1} 天审查阈值，{2}% 的目标落在 {3}% 的损失预算之内。"
+      },
+      "INCONSISTENT_INPUT": {
+        "pattern": "^The profile is internally contradictory: (.+)$",
+        "cn": "家庭档案内部互相矛盾：{0}"
+      }
+    }
+  },
+  "today": {
+    "meaning": {
+      "INCREASE_ALLOCATION": "让更多资产负债表投入长期目标：增长层过于干涸。",
+      "REDUCE_RISK": "在生存缓冲越过阈值之前，先降低风险。",
+      "HEDGE": "某个压力情景会击穿生存底线，先购买保护。",
+      "REBALANCE": "持仓偏离政策配置过多，重新对齐到政策配置。",
+      "HOLD": "今天不需要动作：方案已在家庭约束范围之内。",
+      "ABSTAIN": "Verity 无法为建议背书，因此不下达动作。"
+    },
+    "reason": {
+      "INCREASE_ALLOCATION": {
+        "pattern": "^Only ([.\\d]+)% of the balance sheet is working for long-term goals\\.$",
+        "cn": "只有 {0}% 的资产负债表在为长期目标工作。"
+      },
+      "REDUCE_RISK": {
+        "pattern": "^Safety days ([\\d.]+) are below the (\\d+)-day threshold\\.$",
+        "cn": "生存天数 {0} 天低于 {1} 天审查线。"
+      },
+      "HEDGE": {
+        "pattern": "^Stress scenario '([A-Za-z_]+)' breaks the survival floor \\(([\\d.]+) days remaining\\)\\.$",
+        "cn": "压力情景「{0}」击穿了生存底线（仅剩 {1} 天）。"
+      },
+      "REBALANCE": {
+        "pattern": "^Holdings drift ([.\\d]+)% from the policy allocation, above the ([.\\d]+)% threshold\\.$",
+        "cn": "实际持仓与政策配置偏离 {0}%，高于 {1}% 的再平衡阈值。"
+      },
+      "HOLD": {
+        "cn": "持仓在政策配置带之内；今天无需动作。"
+      },
+      "ABSTAIN_VERDICT": {
+        "pattern": "^Feasibility verdict is ([A-Z_]+), so no action is issued\\.$",
+        "cn": "可行性判定为 {0}，因此不下达动作。"
+      }
+    }
+  },
+  "risk_ranking": {
+    "ranking_methods": [
+      {
+        "pattern": "^score = severity_weight \\* probability, where probability is a documented deterministic heuristic \\(never a forecast\\); sorted by score descending\\.$",
+        "cn": "得分 = 严重度权重 × 概率。概率是文档化的确定性启发值，绝非预测；按得分从高到低排序。"
+      },
+      {
+        "pattern": "^Risk ranking abstained without sufficient household evidence; Verity never assumes what the family has not recorded\\.$",
+        "cn": "缺乏足够的家庭证据，风险排序不下结论；Verity 从不臆测家庭未记录的内容。"
+      },
+      {
+        "pattern": "^Risk ranking abstained without sufficient household evidence\\.$",
+        "cn": "缺乏足够的家庭证据，风险排序不下结论。"
+      }
+    ],
+    "notices": [
+      {
+        "pattern": "^Risk ranking is decision support, not a prediction\\. Probability is an evidence-based heuristic, not a statistical forecast\\.$",
+        "cn": "风险排序是决策支持，不是预测。概率是基于证据的启发值，不是统计预测。"
+      },
+      {
+        "pattern": "^Risk ranking refused to judge: evidence is insufficient\\. No risk is ranked on assumed data\\.$",
+        "cn": "风险排序拒绝下判断：证据不足。不会基于假设数据给任何风险排序。"
+      },
+      {
+        "pattern": "^Risk ranking refused to judge: evidence is insufficient and Verity never assumes what the family has not recorded\\.$",
+        "cn": "风险排序拒绝下判断：证据不足，Verity 从不臆测家庭未记录的内容。"
+      }
+    ],
+    "abstain_reason": {
+      "pattern": "^Safety computation is unavailable; Verity refuses to rank without it\\.$",
+      "cn": "无法获得安全计算，Verity 拒绝在缺少它的情况下排序。"
+    }
+  },
+  "insurance": {
+    "disclaimers": [
+      {
+        "pattern": "^Verity recommends no insurer, no policy and no product\\. This audit checks what the family already records; coverage sizing is a documented reference, not a policy quotation\\.$",
+        "cn": "Verity 不推荐任何保险公司、保险产品或商业机构。本审计只核对家庭已记录内容；保额测算是文档化参考，不是保单报价。"
+      },
+      {
+        "pattern": "^Verity recommends no insurer, no policy and no product\\. Any actual placement requires a licensed partner and remains outside E0\\.$",
+        "cn": "Verity 不推荐任何保险公司、保险产品或商业机构。任何实际投保都需要持牌合作伙伴完成，且属于 E0 之外的事项。"
+      }
+    ],
+    "warnings": [
+      {
+        "match": "Coverage gaps describe recorded protection only; Verity recommends no insurer and no product. Any actual placement requires a licensed partner.",
+        "cn": "保障缺口只描述已记录的保护；Verity 不推荐任何保险公司或产品。任何实际投保都需要持牌合作伙伴完成。"
+      },
+      {
+        "pattern": "^([一-鿿/]+) coverage gap of ([\\d,]+) \\(need ([\\d,]+), recorded ([\\d,]+)\\)\\.$",
+        "cn": "{0}缺口 {1}（需求 {2}，已记录 {3}）。"
+      }
+    ]
+  },
+  "evidence": {
+    "assumptions": [
+      {
+        "pattern": "^Synthetic data only; no real client records are processed in E0\\.$",
+        "cn": "仅使用合成数据；E0 不处理任何真实客户记录。"
+      },
+      {
+        "pattern": "^Rates are decimal fractions and money is in major currency units\\.$",
+        "cn": "利率为十进制小数，金额以主要币种单位计。"
+      },
+      {
+        "pattern": "^Costs, taxes and transaction frictions are simplified placeholders in E0\\.$",
+        "cn": "E0 中的成本、税费与交易摩擦为简化占位值。"
+      },
+      {
+        "pattern": "^Simulated returns are scenarios, not forecasts, and are not real performance\\.$",
+        "cn": "模拟收益是情景，不是预测，也不是真实业绩。"
+      },
+      {
+        "pattern": "^No specific security, fund, insurer or product is recommended by the engine\\.$",
+        "cn": "引擎不推荐任何具体证券、基金、保险公司或产品。"
+    },
+    {
+      "pattern": "^Amounts are read in the household's reporting currency; a per-item currency marks foreign-currency exposure and is never converted\\.$",
+      "cn": "金额按家庭记账币种的主单位读入；逐项币种只标记外币敞口，E0 不做任何汇率换算。"
+      }
+    ],
+    "limits": [
+      {
+        "match": "Synthetic data only; no real client data is used anywhere in E0.",
+        "cn": "仅使用合成数据；E0 不使用任何真实客户数据。"
+      },
+      {
+        "match": "Simulation output is not a forecast and is not real performance.",
+        "cn": "模拟输出不是预测，也不是真实业绩。"
+      },
+      {
+        "match": "No specific security, fund, insurer or product is recommended.",
+        "cn": "不推荐任何具体证券、基金、保险公司或产品。"
+      },
+      {
+        "match": "Missing source or run_id; this result is not independently verifiable.",
+        "cn": "缺少来源或运行号；该结果无法独立核验。"
+      }
+    ]
+  },
+  "risk_notice": [
+    {
+      "pattern": "^Decision support only\\. Not investment, legal, tax or insurance advice\\. No production authority; release gate is DENY\\.$",
+      "cn": "仅提供决策支持，不构成投资、法律、税务或保险建议；无生产权限，发布闸门保持 DENY。"
+    }
+  ],
+  "status_reason": {
+    "protection_abstain": {
+      "match": "Engine refused to judge; the protection plan follows the same gate.",
+      "cn": "引擎拒绝下判断，综合保护方案遵循同一闸门。"
+    },
+    "protection_abstain_long": {
+      "pattern": "^Integrated protection plan abstained because the engine refused to judge; evidence is insufficient and Verity never assumes what the family has not recorded\\.$",
+      "cn": "综合保护方案弃权：引擎拒绝下判断，证据不足，Verity 从不臆测家庭未记录的内容。"
+    },
+    "protection_abstain_short": {
+      "pattern": "^Integrated protection plan abstained: evidence is insufficient\\. Verity never assumes what the family has not recorded\\.$",
+      "cn": "综合保护方案弃权：证据不足，Verity 从不臆测家庭未记录的内容。"
+    },
+    "timeline_abstain": {
+      "match": "Engine refused to judge; the danger timeline follows the same gate.",
+      "cn": "引擎拒绝下判断，危险时间轴遵循同一闸门。"
+    },
+    "breadwinner_abstain": {
+      "match": "Engine refused to judge; breadwinner analysis follows the same gate.",
+      "cn": "引擎拒绝下判断，顶梁柱与保护缺口遵循同一闸门。"
+    },
+    "annual_goal_abstain": {
+      "match": "Engine refused to judge; the annual goal follows the same gate.",
+      "cn": "引擎拒绝下判断，年度目标与止盈状态遵循同一闸门。"
+    }
+  },
+  "validation": [
+    {
+      "pattern": "^members\\[(\\d+)\\] must be an object$",
+      "cn": "成员[{0}] 必须是对象"
+    },
+    {
+      "pattern": "^members\\[(\\d+)\\]\\.annual_income must be numeric$",
+      "cn": "成员[{0}].annual_income 必须是数字"
+    },
+    {
+      "pattern": "^members\\[(\\d+)\\]\\.annual_income must not be negative$",
+      "cn": "成员[{0}].annual_income 不能为负"
+    },
+    {
+      "pattern": "^assets\\[(\\d+)\\] must be an object$",
+      "cn": "资产[{0}] 必须是对象"
+    },
+    {
+      "pattern": "^assets\\[(\\d+)\\]\\.value must be numeric$",
+      "cn": "资产[{0}].value 必须是数字"
+    },
+    {
+      "pattern": "^assets\\[(\\d+)\\]\\.value must not be negative$",
+      "cn": "资产[{0}].value 不能为负"
+    },
+    {
+      "pattern": "^liabilities\\[(\\d+)\\] must be an object$",
+      "cn": "负债[{0}] 必须是对象"
+    },
+    {
+      "pattern": "^liabilities\\[(\\d+)\\]\\.balance must be numeric$",
+      "cn": "负债[{0}].balance 必须是数字"
+    },
+    {
+      "pattern": "^liabilities\\[(\\d+)\\]\\.balance must not be negative$",
+      "cn": "负债[{0}].balance 不能为负"
+    },
+    {
+      "pattern": "^liabilities\\[(\\d+)\\]\\.mandatory_payment must be numeric$",
+      "cn": "负债[{0}].mandatory_payment 必须是数字"
+    },
+    {
+      "pattern": "^protection\\[(\\d+)\\] must be an object$",
+      "cn": "保障[{0}] 必须是对象"
+    },
+    {
+      "pattern": "^protection\\[(\\d+)\\]\\.coverage must be a non-negative number$",
+      "cn": "保障[{0}].coverage 必须是非负数"
+    },
+    {
+      "pattern": "^protection\\[(\\d+)\\]\\.annual_premium must be a non-negative number$",
+      "cn": "保障[{0}].annual_premium 必须是非负数"
+    },
+    {
+      "pattern": "^future_rigid_outflows\\[(\\d+)\\] must be an object$",
+      "cn": "未来刚性支出[{0}] 必须是对象"
+    },
+    {
+      "pattern": "^future_rigid_outflows\\[(\\d+)\\]\\.amount must be non-negative$",
+      "cn": "未来刚性支出[{0}].amount 必须非负"
+    },
+    {
+      "pattern": "^future_rigid_outflows\\[(\\d+)\\]\\.years_until_due must be non-negative$",
+      "cn": "未来刚性支出[{0}].years_until_due 必须非负"
+    },
+    {
+      "match": "profile is not an object",
+      "cn": "档案（profile）不是对象"
+    },
+    {
+      "match": "members must be a non-empty list",
+      "cn": "成员（members）必须是非空列表"
+    },
+    {
+      "match": "annual_expenses_essential must be numeric",
+      "cn": "annual_expenses_essential 必须是数字"
+    },
+    {
+      "match": "annual_expenses_essential must be greater than zero",
+      "cn": "annual_expenses_essential 必须大于零"
+    },
+    {
+      "match": "annual_expenses_discretionary must be numeric",
+      "cn": "annual_expenses_discretionary 必须是数字"
+    },
+    {
+      "match": "annual_expenses_discretionary must not be negative",
+      "cn": "annual_expenses_discretionary 不能为负"
+    },
+    {
+      "match": "assets must be a list",
+      "cn": "assets 必须是列表"
+    },
+    {
+      "match": "liabilities must be a list",
+      "cn": "liabilities 必须是列表"
+    },
+    {
+      "match": "protection must be a list",
+      "cn": "protection 必须是列表"
+    },
+    {
+      "match": "future_rigid_outflows must be a list",
+      "cn": "future_rigid_outflows 必须是列表"
+    },
+    {
+      "match": "investment_horizon_years must be numeric",
+      "cn": "investment_horizon_years 必须是数字"
+    },
+    {
+      "match": "investment_horizon_years must be greater than zero",
+      "cn": "investment_horizon_years 必须大于零"
+    },
+    {
+      "match": "target_annual_return must be numeric",
+      "cn": "target_annual_return 必须是数字"
+    },
+    {
+      "match": "target_annual_return must not be negative",
+      "cn": "target_annual_return 不能为负"
+    },
+    {
+      "match": "target_annual_return above 100% per year is not a credible input",
+      "cn": "target_annual_return 每年超过 100% 不是可信输入"
+    },
+    {
+      "match": "max_tolerable_loss_pct must be numeric",
+      "cn": "max_tolerable_loss_pct 必须是数字"
+    },
+    {
+      "match": "max_tolerable_loss_pct must be a fraction between 0 and 1",
+      "cn": "max_tolerable_loss_pct 必须是 0 到 1 之间的小数"
+    },
+    {
+      "match": "profile is not an object",
+      "cn": "档案（profile）不是对象"
+    },
+    {
+      "pattern": "^total liabilities exceed total assets by more than (\\d+)x$",
+      "cn": "总负债超过总资产的 {0} 倍以上"
+    },
+    {
+      "match": "the profile is not internally coherent",
+      "cn": "档案内部不自洽"
+    },
+    {
+      "pattern": "^currency must be a three-letter code, for example CNY$",
+      "cn": "币种必须是三位字母代码，例如 CNY"
+    },
+    {
+      "pattern": "^([a-z_]+)\\[(\\d+)\\]\\.currency must be a three-letter code$",
+      "cn": "{0}[{1}].currency 必须是三位字母代码"
+    },
+    {
+      "pattern": "^recorded currency ([A-Z]{3}) \\((.*)\\) marks a foreign-currency exposure against reporting currency ([A-Z]{3}); E0 performs no FX conversion and reads the recorded amount in ([A-Z]{3}) major units$",
+      "cn": "外币计价标记 {0}（{1}）：E0 不做汇率换算，金额按记账币种 {2} 的主单位读入，该资产会计入汇率压力情景。"
+    },
+    {
+      "pattern": "^recorded items use several currencies \\((.*)\\); E0 has no FX model and will not add amounts across currencies$",
+      "cn": "记录的项目使用了多种币种（{0}）；E0 没有汇率模型，不会把不同币种的金额直接相加。"
+    },
+    {
+      "pattern": "^(.+) is at or above the E0 plausibility ceiling; the engine will not judge a household on a number it cannot stand behind$",
+      "cn": "{0} 达到或超过 E0 的可信上限；引擎不会用一个自己都无法负责的数字来判断一个家庭。"
+    },
+    {
+      "pattern": "^members\\[(\\d+)\\]\\.age must be between 0 and 130 years$",
+      "cn": "成员[{0}] 的年龄必须在 0 到 130 岁之间"
+    },
+    {
+      "pattern": "^investment_horizon_years above (\\d+) is outside the E0 contract$",
+      "cn": "investment_horizon_years 超过 {0} 年，超出 E0 契约范围"
+    }
+  ]
+};</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!-- T-E0-008 F-02 加固：静态托管无法下发响应头，这里用 meta 承担可生效的那一部分
+     （S-27-09 补齐 default-src / script-src / connect-src，脚本执行面从此有第二道防线）。
+     静态通道的 i18n/openapi 是构建期内联脚本，无法像服务端通道（api/server.py 在
+     下发 zh.html 时用 sha256 白名单锁定内联脚本、script-src 不含 unsafe-inline）
+     那样严格，故 meta 保留 'unsafe-inline'；框架/对象/表单仍然拒绝。点击劫持
+     防护只能靠响应头，见 api/server.py。 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+<meta name="theme-color" content="#070b16" />
+<title>Verity AI家庭CFO · 每个家庭的AI私人CFO</title>
+<meta name="description" content="Verity AI家庭CFO：一个APP，管好全家的钱、保障和未来。先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="zh.css" />
+</head>
+<body>
+
+<div class="banner">仅提供决策支持 · 无生产权限 · 发布闸门 DENY · 仅使用虚拟/样本数据</div>
+
+<header class="top">
+  <div class="brand">
+    <div class="mark">V</div>
+    <div>
+      <h1>Verity AI家庭CFO</h1>
+      <p>每个家庭的AI私人CFO</p>
+    </div>
+  </div>
+  <div class="hero-promise">一个APP，管好全家的钱、保障和未来。</div>
+  <button id="nav-toggle" aria-label="打开导航" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="main-nav">
+    <a href="#home-dashboard">我的家庭总览</a>
+    <a href="#profiles">我的家庭档案</a>
+    <a href="#engine-strip">引擎准备状态</a>
+    <a href="#wizard">建立家庭档案</a>
+    <a href="#r-verdict">判定与今日行动</a>
+    <a href="#r-balance">现金流与资产负债</a>
+    <a href="#r-trend">月度趋势</a>
+    <a href="#r-timeline">危险时间轴</a>
+    <a href="#r-safety">家庭生存底线</a>
+    <a href="#r-breadwinner">顶梁柱与保护缺口</a>
+    <a href="#r-annual-goal">年度目标与止盈</a>
+    <a href="#r-risk">风险排序</a>
+    <a href="#r-protection">综合保护方案</a>
+    <a href="#r-stress">压力测试</a>
+    <a href="#r-evidence">证据与审计</a>
+    <a href="#api-contract">接口契约与版本</a>
+    <a href="en.html" data-en-link>English console</a>
+  </nav>
+</header>
+
+<section class="hero card" id="home">
+  <div class="hero-copy">
+    <div class="hero-slogan">每个家庭的AI私人CFO</div>
+    <div class="hero-promise-line">一个APP，管好全家的钱、保障和未来。</div>
+    <p class="hero-desc">先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。</p>
+    <div class="hero-actions">
+      <button type="button" class="primary" id="hero-establish">建立我的家庭</button>
+      <button type="button" class="ghost hidden" id="hero-back">回到我的家庭档案</button>
+      <button type="button" class="ghost" id="hero-demo">先看示范家庭</button>
+    </div>
+  </div>
+  <div class="hero-account" id="hero-account">
+    <div class="k">本机账户</div>
+    <div class="v" id="hero-account-name">尚未注册</div>
+    <div class="h" id="hero-account-meta">首次保存家庭档案即完成注册（仅保存在本机浏览器）。</div>
+  </div>
+</section>
+
+<!-- Q-29-03（Round 30）：提示必须落在用户当前视野内。
+     档案区（#profiles）的提示节点 #pf-msg 在手机上位于首屏之外的第 3~4 屏，
+     用户在首页触发存储 / PWA / 导入导出类反馈时看不到任何提示。这里在首屏
+     常驻一条镜像提示带：只有当档案区不在视野内时它才出现，档案区一进入视野即自动收起。 -->
+<div class="note hidden" id="home-notice" role="status" aria-live="polite"></div>
+
+<section class="card" id="home-dashboard">
+  <div class="home-head">
+    <div>
+      <h2>我的家庭总览</h2>
+      <div class="sub" id="home-status">注册并运行一次引擎后，这里会展示你家庭的 8 项核心情况。</div>
+    </div>
+    <div class="wiz-toolbar home-cta">
+      <button type="button" id="home-establish" class="primary">建立我的家庭</button>
+      <button type="button" class="ghost" id="home-run">运行 Verity 引擎</button>
+    </div>
+  </div>
+
+  <div class="err hidden" id="home-error" role="alert" aria-live="assertive"></div>
+
+  <div class="grid c3 home-grid" id="home-grid">
+    <div class="metric home-mod" data-module="safety"><div class="k">家庭安全</div><div class="v" id="hm-safety">—</div><div class="h" id="hm-safety-hint">整体判定与生存底线</div></div>
+    <div class="metric home-mod" data-module="cash"><div class="k">现金可支撑时间</div><div class="v" id="hm-cash">—</div><div class="h" id="hm-cash-hint">收入中断后可支撑天数</div></div>
+    <div class="metric home-mod" data-module="education"><div class="k">教育资金</div><div class="v" id="hm-education">—</div><div class="h" id="hm-education-hint">子女教育连续性</div></div>
+    <div class="metric home-mod" data-module="protection_gap"><div class="k">保障缺口</div><div class="v" id="hm-gap">—</div><div class="h" id="hm-gap-hint">顶梁柱意外情景下的资金缺口</div></div>
+    <div class="metric home-mod" data-module="debt"><div class="k">债务</div><div class="v" id="hm-debt">—</div><div class="h" id="hm-debt-hint">家庭债务总额与压力</div></div>
+    <div class="metric home-mod" data-module="growth"><div class="k">资产安全增长</div><div class="v" id="hm-growth">—</div><div class="h" id="hm-growth-hint">净资产变化与资金缺口月份</div></div>
+  </div>
+
+  <div class="home-block">
+    <h3>今日三件事</h3>
+    <div class="sub">根据最近一次引擎结果，为你整理的 3 件最值得先做的事。</div>
+    <ol id="home-three" class="home-three"><li class="note">还没有可整理的事项。先注册并运行一次引擎。</li></ol>
+  </div>
+
+  <div class="home-block">
+    <h3>直接问 Verity</h3>
+    <div class="sub">用你的家庭最近一次结果即时回答，不需要联网。</div>
+    <div class="ask-chips" id="ask-chips">
+      <button type="button" class="ghost" data-q="现金">我们家能撑多久？</button>
+      <button type="button" class="ghost" data-q="保障">保障缺口大吗？</button>
+      <button type="button" class="ghost" data-q="债务">哪笔债务最危险？</button>
+      <button type="button" class="ghost" data-q="教育">教育金够吗？</button>
+      <button type="button" class="ghost" data-q="增长">资产在安全增长吗？</button>
+      <button type="button" class="ghost" data-q="动作">今天要做什么？</button>
+    </div>
+    <form id="ask-form" class="ask-form" autocomplete="off">
+      <input id="ask-input" type="text" maxlength="200" placeholder="输入你的问题，例如：我们家现金能撑多久？" aria-label="向 Verity 提问" />
+      <button type="submit" id="ask-submit">直接问 Verity</button>
+    </form>
+    <div class="ask-answer note" id="ask-answer">注册并运行一次引擎后，这里会直接回答你。</div>
+  </div>
+</section>
+
+<main>
+
+  <section class="card">
+    <h2>引擎状态与执行通道</h2>
+    <div class="sub">本页运行的是 Verity E0 决策引擎本体（<code class="mono">engine/</code>），不是演示数据。</div>
+    <div class="grid c4">
+      <div class="metric"><div class="k">引擎版本</div><div class="v info" id="st-algo">—</div><div class="h">algorithm_version</div></div>
+      <div class="metric"><div class="k">生产权限</div><div class="v warn" id="st-authority">—</div><div class="h">PRODUCTION_AUTHORITY</div></div>
+      <div class="metric"><div class="k">发布闸门</div><div class="v neg" id="st-gate">—</div><div class="h">RELEASE_GATE</div></div>
+      <div class="metric"><div class="k">执行通道</div><div class="v info" id="st-channel">检测中…</div><div class="h" id="st-channel-hint">正在探测后端 /api/v0/analyze</div></div>
+    </div>
+
+    <div class="engine-strip" id="engine-strip" data-phase="idle">
+      <div class="es-head">
+        <span class="es-dot" id="es-dot" aria-hidden="true"></span>
+        <span class="es-phase" id="es-phase">引擎尚未开始准备</span>
+        <span class="es-pct" id="es-pct">0%</span>
+      </div>
+      <div class="es-bar" id="es-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="es-bar-fill"></i></div>
+      <div class="es-meta" id="es-meta">首屏已可填写家庭档案；引擎运行时会在后台准备，准备期间不影响输入。</div>
+      <div class="es-actions">
+        <button type="button" class="ghost" id="es-start">立即准备引擎</button>
+        <button type="button" class="ghost hidden" id="es-retry">重试准备引擎</button>
+      </div>
+    </div>
+    <div class="pwa-strip hidden" id="pwa-strip">
+      <span class="pwa-dot" id="pwa-dot" aria-hidden="true"></span>
+      <span id="pwa-text"></span>
+      <button type="button" class="ghost hidden" id="pwa-reload">立即刷新</button>
+    </div>
+  </section>
+
+  <section class="card" id="profiles">
+    <h2>我的家庭档案（保存在本机）</h2>
+    <div class="sub">档案与账户只保存在这台设备的浏览器里，不上传、不收集身份信息。换手机或换浏览器时用「导出 / 导入」搬运；「建立我的家庭」首次保存即完成本机注册。</div>
+    <div class="sub" id="pf-channel-notice">正在确认本次运行的通道，确认后会如实说明家庭档案的流向。</div>
+
+    <div class="grid c3">
+      <div class="metric"><div class="k">已保存档案</div><div class="v info" id="pf-count">0</div><div class="h">本机浏览器存储</div></div>
+      <div class="metric"><div class="k">占用空间</div><div class="v" id="pf-bytes">—</div><div class="h">本机存储约值</div></div>
+      <div class="metric"><div class="k">当前档案</div><div class="v" id="pf-last">未保存</div><div class="h">下次打开自动恢复</div></div>
+    </div>
+
+    <div class="wiz-toolbar">
+      <input id="pf-name" placeholder="档案名称，例如 我们家 2026" aria-label="档案名称" />
+      <button type="button" id="pf-save">保存当前档案</button>
+      <button type="button" class="ghost" id="pf-save-as">另存为新档案</button>
+      <button type="button" class="ghost" id="pf-export">导出当前档案</button>
+      <button type="button" class="ghost" id="pf-import">导入档案文件</button>
+      <button type="button" class="ghost" id="pf-clear-all">清空本机档案</button>
+      <input type="file" id="pf-file" accept="application/json,.json" class="hidden" aria-hidden="true" />
+    </div>
+
+    <div class="note" id="pf-msg">还没有保存过档案。填完下面的向导后点「保存当前档案」，下次打开就不用重新输入。</div>
+    <div id="pf-list"></div>
+    <div class="sub" style="margin-top:12px">
+      每运行一次引擎，这次结果（判定、现金流与资产负债、生存底线、风险排序、六域方案、证据与审计）
+      会随档案一起存进本机；之后点档案行里的「查看上次结果」，浏览器会用与引擎相同的规范 JSON
+      重算哈希逐项复核，复核不通过就不展示任何指标。
+    </div>
+  </section>
+
+  <section class="card" id="wizard">
+    <h2>建立家庭档案</h2>
+    <div class="sub">按家庭真实情况填写。缺失的必填项会让引擎拒绝判断（ABSTAIN），而不是替家庭假设。</div>
+
+    <ol class="stepper" id="stepper">
+      <li data-step-label="1">成员</li>
+      <li data-step-label="2">收支</li>
+      <li data-step-label="3">资产</li>
+      <li data-step-label="4">负债</li>
+      <li data-step-label="5">保险</li>
+      <li data-step-label="6">法律</li>
+      <li data-step-label="7">社保</li>
+      <li data-step-label="8">目标</li>
+    </ol>
+
+    <div class="wiz-toolbar">
+      <button type="button" class="ghost" id="w-demo">载入完全记录示范家庭</button>
+      <button type="button" class="ghost" id="w-clear">清空重填</button>
+      <span class="pill info" id="w-progress">第 1 / 8 步</span>
+    </div>
+
+    <!-- 1 成员 -->
+    <div class="wiz-step" data-step="1">
+      <h3>① 家庭成员</h3>
+      <div class="grid c2">
+        <div class="field"><label for="w-profile-id">家庭档案名称</label><input id="w-profile-id" value="MY-FAMILY-001" /></div>
+        <div class="field"><label for="w-currency">记账币种</label>
+          <select id="w-currency">
+            <option value="CNY">人民币 CNY</option>
+            <option value="USD">美元 USD</option>
+            <option value="HKD">港币 HKD</option>
+            <option value="SGD">新加坡元 SGD</option>
+          </select>
+        </div>
+      </div>
+      <div id="w-members"></div>
+      <button type="button" class="ghost" id="w-add-member">+ 增加家庭成员</button>
+    </div>
+
+    <!-- 2 收支 -->
+    <div class="wiz-step hidden" data-step="2">
+      <h3>② 收入与支出</h3>
+      <div class="grid c2">
+        <div class="field"><label for="w-essential">家庭年必要支出</label><input id="w-essential" type="number" min="0" step="1000" value="240000" /><div class="fhint">房租/房贷以外的生活刚需：吃住行、教育、医疗、赡养</div></div>
+        <div class="field"><label for="w-discretionary">家庭年可选支出</label><input id="w-discretionary" type="number" min="0" step="1000" value="60000" /><div class="fhint">旅行、娱乐等可压缩支出</div></div>
+      </div>
+      <h3 class="mt">未来刚性支出（一次性大额责任）</h3>
+      <div id="w-outflows"></div>
+      <button type="button" class="ghost" id="w-add-outflow">+ 增加一项刚性支出</button>
+    </div>
+
+    <!-- 3 资产 -->
+    <div class="wiz-step hidden" data-step="3">
+      <h3>③ 家庭资产</h3>
+      <p class="fhint">按可动用性分类填写；自住房等无法在危机中动用的资产请不要计入现金。</p>
+      <div class="grid c2" id="w-assets"></div>
+    </div>
+
+    <!-- 4 负债 -->
+    <div class="wiz-step hidden" data-step="4">
+      <h3>④ 家庭负债</h3>
+      <p class="fhint">年强制还款额＝每年必须支付的还款金额，直接决定应急金目标与债务压力。</p>
+      <div id="w-liabilities"></div>
+    </div>
+
+    <!-- 5 保险 -->
+    <div class="wiz-step hidden" data-step="5">
+      <h3>⑤ 已记录的保险保障</h3>
+      <p class="fhint">只填写已经生效的保障。没有就留 0 —— 引擎会把缺口算出来，不会替你假设已有保障。</p>
+      <div id="w-protection"></div>
+    </div>
+
+    <!-- 6 法律 -->
+    <div class="wiz-step hidden" data-step="6">
+      <h3>⑥ 法律安排</h3>
+      <p class="fhint">未勾选＝未记录。未记录的领域会进入综合保护方案的风险列表。</p>
+      <div id="w-legal"></div>
+    </div>
+
+    <!-- 7 社保 -->
+    <div class="wiz-step hidden" data-step="7">
+      <h3>⑦ 社会保障</h3>
+      <div id="w-social"></div>
+    </div>
+
+    <!-- 8 目标 -->
+    <div class="wiz-step hidden" data-step="8">
+      <h3>⑧ 投资目标与风险承受力</h3>
+      <div class="grid c3">
+        <div class="field"><label for="w-horizon">投资期限（年）</label><input id="w-horizon" type="number" min="1" max="60" step="1" value="15" /></div>
+        <div class="field"><label for="w-target">目标年化回报（0–1）</label><input id="w-target" type="number" min="0" max="1" step="0.005" value="0.06" /></div>
+        <div class="field"><label for="w-tolerance">可承受最大损失（0–1）</label><input id="w-tolerance" type="number" min="0" max="1" step="0.01" value="0.25" /></div>
+      </div>
+      <div class="grid c2" style="margin-top:10px">
+        <div class="field"><label for="w-annual-gain">本年度已实现净收益（可选）</label><input id="w-annual-gain" type="number" step="1000" value="" placeholder="例如 118000，留空＝未记录" /></div>
+        <div class="field"><label for="w-annual-asof">该数字的记录日期（可选）</label><input id="w-annual-asof" type="text" placeholder="例如 2026-09-16" /></div>
+      </div>
+      <div class="note">这三个数字足以让同一个家庭在 <code class="mono">PASS</code> / <code class="mono">REVIEW</code> / <code class="mono">REFUSE</code> / <code class="mono">ABSTAIN</code> 之间移动。</div>
+      <div class="note">后两项是可选的：年度目标金额用长期资金 × 目标年化回报算出来，<strong>已实现收益不会被推算</strong>。不填时「年度目标与止盈」一节会如实写「进度未记录」（证据不足不等于达标）。</div>
+    </div>
+
+    <div class="wiz-footer">
+      <button type="button" class="ghost" id="w-prev">上一步</button>
+      <button type="button" id="w-next">下一步</button>
+      <button type="button" id="w-run" class="hidden">运行 Verity 引擎</button>
+    </div>
+
+    <div id="w-validation" class="validation"></div>
+    <div id="w-error" class="err"></div>
+  </section>
+
+  <section id="results" class="hidden">
+
+    <section class="card hidden" id="r-snapshot">
+      <h2>本机保存的上次结果 · 可复核快照</h2>
+      <div class="sub" id="r-snapshot-sub">—</div>
+      <div class="note" id="r-snapshot-proof">—</div>
+      <div id="r-snapshot-checks" style="margin-top:10px"></div>
+      <div class="wiz-toolbar" style="margin-top:14px">
+        <button type="button" id="r-snapshot-rerun">按当前输入重新运行</button>
+        <button type="button" class="ghost" id="r-snapshot-close">收起这份快照</button>
+      </div>
+    </section>
+
+    <section class="card" id="r-verdict">
+      <h2>整体判定与今日行动</h2>
+      <div class="sub">Verity 的四种许可答案：<code class="mono">PASS</code> / <code class="mono">REVIEW</code> / <code class="mono">REFUSE</code> / <code class="mono">ABSTAIN</code>。信息不足就是 <code class="mono">ABSTAIN</code>，不是错误。</div>
+      <div id="run-meta" class="note"></div>
+      <div class="wiz-toolbar report-actions" id="r-report-actions">
+        <span class="pill info">家庭财富诊断报告</span>
+        <button type="button" id="r-report-preview" disabled>预览报告</button>
+        <button type="button" class="ghost" id="r-report-download" disabled>下载报告 · HTML</button>
+      </div>
+      <div class="note" id="r-report-status">运行引擎后即可导出：报告包含总体判定、今日行动、现金流与资产负债、生存底线、风险排序、综合保护方案与证据审计，全部来自引擎本次真实输出；单个 HTML 文件，不依赖网络，可离线打开、可直接转发。</div>
+      <div class="action-hero" style="margin:14px 0 16px">
+        <div>
+          <div class="label">今日行动 · Today</div>
+          <div class="value" id="r-action">—</div>
+        </div>
+        <div class="why" id="r-action-why">—</div>
+      </div>
+      <div class="grid c4" id="r-today-grid"></div>
+      <div id="r-verdict-body" style="margin-top:16px"></div>
+    </section>
+
+    <section class="card" id="r-balance">
+      <h2>家庭现金流与资产负债</h2>
+      <div class="sub">先看家庭怎么活、怎么赚钱、背了多少刚性责任，再谈投资。</div>
+      <div class="grid c4" id="r-balance-grid"></div>
+      <div id="r-layers" style="margin-top:16px"></div>
+      <div id="r-assets-table" style="margin-top:16px"></div>
+    </section>
+
+    <section class="card" id="r-trend">
+      <h2>现金流与资产负债 · 多月度趋势</h2>
+      <div class="sub">把家庭<strong>自己记录</strong>的收入、刚性支出与债务按月展开：<strong>不假设任何投资收益</strong>，非现金资产按记录值持有，债务按记录的年强制还款先息后本摊还。“趋势”是记录的推论，不是预测。</div>
+      <div class="trend-toolbar">
+        <span class="pill info" id="r-trend-status">—</span>
+        <div class="seg" id="r-trend-range" role="group" aria-label="显示月份范围">
+          <button type="button" data-months="6">前 6 个月</button>
+          <button type="button" data-months="12" class="active">12 个月</button>
+          <button type="button" data-months="0">全部</button>
+        </div>
+      </div>
+      <div class="grid c4" id="r-trend-grid"></div>
+      <div id="r-trend-chart"></div>
+      <div id="r-trend-milestones"></div>
+      <div id="r-trend-table"></div>
+      <div class="note" id="r-trend-note">尚未运行。</div>
+    </section>
+
+    <section class="card" id="r-timeline">
+      <h2>危险时间轴 · 第几个月进入危险区</h2>
+      <div class="sub">把八个压力情景放进家庭<strong>自己记录</strong>的月度现金流投影（不假设投资收益）：每个情景回答「按现在记录，第几个月会击穿现金底线」。冲击金额与压力测试逐项一致；缺收入或缺支出基线时与趋势模块同门失败关闭（ABSTAIN）。</div>
+      <div id="r-timeline-summary" class="sub"></div>
+      <div class="scroll"><table id="r-timeline-table">
+        <thead><tr><th>情景</th><th class="num">击穿月份</th><th>12 个月关口</th><th class="num">组合损失</th><th class="num">未覆盖／额外支出</th><th class="num">收入损失</th><th>说明</th></tr></thead>
+        <tbody><tr><td colspan="7" class="note">尚未运行。</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <section class="card" id="r-safety">
+      <h2>家庭生存底线</h2>
+      <div class="sub">如果收入今天中断，这个家庭还能撑多久？</div>
+      <div class="grid c4" id="r-safety-grid"></div>
+      <div id="r-safety-risks" style="margin-top:16px"></div>
+    </section>
+
+    <section class="card" id="r-breadwinner">
+      <h2>顶梁柱与保护缺口</h2>
+      <div class="sub">谁在扛这个家庭？如果这个人身故、失能或长期失业，家里还能撑多久，孩子的教育会不会被挤占？</div>
+      <div id="r-breadwinner-summary" class="sub"></div>
+      <div class="scroll"><table id="r-breadwinner-members">
+        <thead><tr><th>成员</th><th>角色</th><th class="num">年龄</th><th class="num">年收入</th><th class="num">收入占比</th><th>顶梁柱</th><th>收入稳定性</th></tr></thead>
+        <tbody><tr><td colspan="7" class="note">尚未运行。</td></tr></tbody>
+      </table></div>
+      <div class="grid c4" id="r-breadwinner-needs" style="margin-top:16px"></div>
+      <div id="r-breadwinner-education" style="margin-top:16px"></div>
+      <div class="scroll"><table id="r-breadwinner-scenarios">
+        <thead><tr><th>意外情景</th><th class="num">损失收入</th><th class="num">可确认赔付</th><th class="num">可动用资源</th><th class="num">刚性需求</th><th class="num">保护缺口</th><th class="num">可支撑月数</th><th>教育连续性</th><th>结论</th></tr></thead>
+        <tbody><tr><td colspan="9" class="note">尚未运行。</td></tr></tbody>
+      </table></div>
+      <div id="r-breadwinner-actions" style="margin-top:16px"></div>
+    </section>
+
+    <section class="card" id="r-annual-goal">
+      <h2>年度目标与止盈状态</h2>
+      <div class="sub">先隔离应急金目标、5 年内到期的刚性支出与一年保障保费，剩下的长期资金今年要赚多少才算达标（窗口外到期的刚性支出由这笔长期资金承担，并按到期月份在月度投影中扣除）；什么时候该停止新增风险、把已经拿到的收益从风险里拿出来。目标收益率来自你<strong>自己记录</strong>的数字，已实现收益也只按记录读取。</div>
+      <div id="r-annual-goal-summary" class="sub"></div>
+      <div class="grid c4" id="r-annual-goal-basis" style="margin-top:16px"></div>
+      <div id="r-annual-goal-progress" style="margin-top:16px"></div>
+      <div class="scroll"><table id="r-annual-goal-milestones">
+        <thead><tr><th>目标刻度</th><th class="num">对应金额</th><th class="num">距 100% 还差</th></tr></thead>
+        <tbody><tr><td colspan="3" class="note">尚未运行。</td></tr></tbody>
+      </table></div>
+      <div id="r-annual-goal-guardrails" style="margin-top:16px"></div>
+      <div id="r-annual-goal-actions" style="margin-top:16px"></div>
+    </section>
+
+    <section class="card" id="r-risk">
+      <h2>家庭风险排序</h2>
+      <div class="sub">只列出引擎真实算出的风险，按 严重度 × 概率 排序；概率是文档化的确定性启发值，不是预测。</div>
+      <div id="r-risk-body">—</div>
+    </section>
+
+    <section class="card" id="r-protection">
+      <h2>综合保护方案 · 现金 / 保险 / 资产 / 债务 / 法律 / 社会保障</h2>
+      <div class="sub">六个领域逐一给出记录状态、发现与优先动作；未记录＝NOT_RECORDED，绝不替家庭假设。</div>
+      <div id="r-protection-body">—</div>
+    </section>
+
+    <section class="card" id="r-stress">
+      <h2>压力测试</h2>
+      <div class="sub">八个强制情景，包含多个风险同时发生；每个情景都写出它为什么咬人，或者为什么无效。</div>
+      <div id="r-stress-summary" class="sub"></div>
+      <div class="scroll"><table id="r-stress-table">
+        <thead><tr><th>情景</th><th class="num">组合损失</th><th class="num">未覆盖／额外支出</th><th class="num">收入损失</th><th class="num">之后生存天数</th><th>是否击穿底线</th><th>严重度</th><th>说明</th></tr></thead>
+        <tbody><tr><td colspan="8" class="note">尚未运行。</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <section class="card" id="r-evidence">
+      <h2>证据与审计记录</h2>
+      <div class="sub">每一次结果都保存输入、来源、算法版本、假设、摘要与哈希链审计记录。</div>
+      <div id="r-evidence-body">—</div>
+    </section>
+
+  </section>
+
+  <!-- 接口契约与版本（T-E0-015）。本页、后端接口与构建产物共用**同一份**接口描述文件，
+       它由 api/openapi.py 的路由表生成，不是手抄的副本。端点清单、版本号与安全姿态全部
+       来自注入进本页的那一份描述文件；未注入时保持失败关闭，不显示任何编造数字。 -->
+  <section class="card" id="api-contract">
+    <h2>接口契约与版本</h2>
+    <div class="sub">本页与后端共用同一份接口描述文件，由路由表生成，不是手抄的副本。</div>
+    <div class="grid c4" id="api-contract-metrics"></div>
+    <div class="wiz-toolbar" id="api-contract-actions">
+      <button type="button" id="api-contract-download">下载 OpenAPI 文档</button>
+      <button type="button" class="ghost" id="api-contract-toggle" aria-expanded="true"
+              aria-controls="api-contract-body">收起端点清单</button>
+      <span class="pill info" id="api-contract-status">—</span>
+    </div>
+    <div id="api-contract-body">—</div>
+  </section>
+
+  <section class="card">
+    <h2>边界与免责</h2>
+    <div class="note">
+      Verity E0 只提供决策支持：不推荐任何具体证券、基金、保险产品或机构，不执行任何交易，
+      不承诺任何收益，不提供投资、法律、税务或保险建议。所有结论都可以被复核，也允许 ABSTAIN。
+      本页不收集银行/券商凭据、账号、持仓或身份证明文件。
+    </div>
+  </section>
+
+</main>
+
+<!-- 结果页章节索引与回到顶部 (T-E0-040)。结果页在 320 px 上总高约一万像素，
+     九个章节从「判定」一路排到「证据」，没有索引时用户只能一屏屏手滑去找
+     「生存底线 / 证据」。索引与页面同源、同导航，不引入第二个页面：
+     静态部署下同样可用（没有任何网络请求），章节列表由当前真实可见的章节生成。 -->
+<div id="sec-nav" class="hidden">
+  <button type="button" id="sec-top" class="sec-fab" aria-label="回到页面顶部">
+    <span class="sec-fab-ico" aria-hidden="true">↑</span>
+    <span class="sec-fab-txt">顶部</span>
+  </button>
+  <button type="button" id="sec-index-toggle" class="sec-fab" aria-label="打开结果页章节索引"
+          aria-expanded="false" aria-controls="sec-index-panel">
+    <span class="sec-fab-ico" aria-hidden="true">☰</span>
+    <span class="sec-fab-txt">章节</span>
+  </button>
+</div>
+
+<div id="sec-index-scrim" class="hidden"></div>
+
+<div id="sec-index-panel" class="hidden" role="dialog" aria-modal="false" aria-label="结果页章节索引">
+  <div class="sec-index-head">
+    <strong>结果页章节索引</strong>
+    <span class="pill info" id="sec-index-count">0 章</span>
+    <button type="button" class="ghost" id="sec-index-close">收起</button>
+  </div>
+  <ol id="sec-index-list"></ol>
+  <div class="note" id="sec-index-hint">点任一章节直接落位；当前所在章节高亮。章节只在真正算出结果后出现，未运行的章节不会列进来。</div>
+</div>
+
+<footer>
+  Verity AI家庭CFO · Verity E0 引擎 · 仅提供决策支持 · 仅使用虚拟样本数据 · 无生产权限 · 发布闸门 DENY
+</footer>
+
+<script src="verity-digest.js"></script>
+<script src="zh.js"></script>
+</body>
+</html>

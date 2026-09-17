@@ -1,0 +1,28 @@
+# Verity AI家庭CFO · Cloudflare Pages 路由别名（上线契约）
+#
+# 依据是**构建产物 dist/ 的真实布局**（scripts/build_zh_bundle.py 的产物命名）：
+#   * dist/index.html  —— 中文控制台（产品主入口，页面标题「Verity AI家庭CFO」）
+#   * dist/en.html     —— 英文静态预览（自包含单文件）
+# 注意别把这条记反：仓库里 web/index.html 是英文预览、web/zh.html 才是中文控制台源码，
+# 而构建产物把控制台放到了 index.html 上。别名必须按产物布局写，不是按源码目录布局写。
+#
+# 本文件里的路径都相对于**本项目被挂载的位置**。按推荐方式把 Pages 项目挂在
+# verityready.com 的 /family/* 路由下时，/zh 实际就是 https://verityready.com/family/zh。
+/zh            /         200
+/zh/           /         200
+/zh.html       /         200
+# 控制台用相对引用（./zh.js）：挂在 /zh/ 下时子资源请求是 /zh/zh.js，
+# 不映射回根目录就会 404。这条是「别名能用」的关键，不是可选优化。
+/zh/*          /:splat  200
+
+# 产品线别名（对外的另一个好记入口）
+/cfo           /         200
+/cfo/          /         200
+/cfo/*         /:splat  200
+
+# 英文静态预览（保留，未改口径）
+/en            /en.html 200
+/en/           /en.html 200
+
+# 刻意不写 `/* /index.html 200` 这类 SPA 兜底：本控制台没有客户端路径路由，
+# 兜底会把真正的 404 伪装成 200，把「资源缺失」变成看不出来的白屏。

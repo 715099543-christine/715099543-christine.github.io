@@ -1,0 +1,29 @@
+{
+  "name": "Verity AI家庭CFO",
+  "short_name": "Verity",
+  "description": "Verity AI家庭CFO：一个APP，管好全家的钱、保障和未来。每个家庭的AI私人CFO，先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "id": "./index.html",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070b16",
+  "theme_color": "#070b16",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

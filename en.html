@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verity — Family Wealth Engine E0 (static preview)</title>
+<meta name="description" content="Verity is a household wealth outcome system. Decision support only. No production authority." />
+<style>
+:root {
+  --bg: #070b16;
+  --bg-2: #0d1424;
+  --panel: #111a2e;
+  --panel-2: #16203a;
+  --line: #22304f;
+  --text: #e8eefc;
+  --muted: #8fa2c7;
+  --accent: #34d399;
+  --accent-dim: #0f3d2e;
+  --blue: #60a5fa;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --violet: #a78bfa;
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 15% -10%, #14213d 0%, var(--bg) 55%);
+  color: var(--text);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.banner {
+  background: linear-gradient(90deg, #7f1d1d 0%, #b45309 50%, #7f1d1d 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-align: center;
+  padding: 9px 12px;
+  text-transform: uppercase;
+}
+
+header.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(9, 14, 26, .82);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+#nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  /* 手机端 390px 实测：header 是 flex 容器，本轮 Hero/品牌区变宽后这个按钮被
+     压缩到 36.9px 宽（低于 44px 最小触控区）。这里禁止收缩并兜住最小宽度。 */
+  flex: 0 0 46px;
+  min-width: 46px;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+#nav-toggle span {
+  display: block;
+  height: 2px;
+  width: 22px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: var(--text);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand .mark {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  display: grid; place-items: center;
+  font-weight: 800; color: #05130f; font-size: 18px;
+}
+.brand h1 { margin: 0; font-size: 17px; letter-spacing: .3px; }
+.brand p { margin: 0; color: var(--muted); font-size: 12px; }
+
+nav a {
+  color: var(--muted); text-decoration: none; margin-left: 16px;
+  font-size: 13px; font-weight: 600;
+  /* T-E0-038：桌面导航也是可点目标，命中盒统一不小于 44 px（与手机端一致），
+     避免出现 16 px 高的“摸不到”链接；header 高度由 JS 实测写入滚动补偿。 */
+  display: inline-flex; align-items: center;
+  min-height: 44px; padding: 0 4px;
+}
+nav a:hover { color: var(--text); }
+
+main { max-width: 1240px; margin: 0 auto; padding: 26px 22px 80px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--panel);
+  border-radius: 999px; padding: 3px 11px; font-size: 11.5px;
+  color: var(--muted); font-weight: 600;
+}
+.pill.ok { color: var(--accent); border-color: #1c5340; background: var(--accent-dim); }
+.pill.warn { color: var(--warn); border-color: #5c4508; background: #2a2107; }
+.pill.bad { color: var(--danger); border-color: #5a2020; background: #2a1111; }
+.pill.info { color: var(--blue); border-color: #1e3a5f; background: #101d33; }
+
+section.card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+section.card > h2 {
+  margin: 0 0 4px; font-size: 15px; letter-spacing: .4px;
+  text-transform: uppercase; color: var(--muted);
+}
+section.card > .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
+
+.grid { display: grid; gap: 14px; }
+.grid.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid.c5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid.c3, .grid.c4, .grid.c5, .grid.c2 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { .grid.c3, .grid.c4, .grid.c5, .grid.c2 { grid-template-columns: 1fr; } }
+
+.metric {
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px 15px;
+}
+.metric .k { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; }
+.metric .v { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.metric .h { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+.v.pos { color: var(--accent); } .v.neg { color: var(--danger); }
+.v.warn { color: var(--warn); } .v.info { color: var(--blue); }
+
+.action-hero {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  background: linear-gradient(120deg, #10233c 0%, #0d1b2f 60%);
+  border: 1px solid #24405f; border-radius: 12px; padding: 18px;
+}
+.action-hero .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+.action-hero .value { font-size: 30px; font-weight: 800; letter-spacing: .5px; }
+.action-hero .why { color: var(--muted); font-size: 13px; max-width: 620px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 12.5px; }
+tbody tr:hover { background: rgba(96, 165, 250, .05); }
+.scroll { overflow-x: auto; }
+
+.bar { height: 8px; border-radius: 999px; background: #1b2743; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 999px; }
+.bar > i.cash { background: var(--blue); }
+.bar > i.bond { background: var(--accent); }
+.bar > i.index { background: var(--violet); }
+.bar > i.equity { background: var(--warn); }
+.bar > i.gold { background: #f0abfc; }
+.bar > i.prot { background: #22d3ee; }
+
+.layer-row { display: grid; grid-template-columns: 150px 1fr 130px; gap: 12px; align-items: center; padding: 7px 0; }
+.layer-row .name { font-size: 12.5px; color: var(--muted); }
+.layer-row .amt { font-family: var(--mono); font-size: 12.5px; text-align: right; }
+
+form .field { margin-bottom: 12px; }
+form label { display: block; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+input, select, textarea {
+  width: 100%; background: #0a1120; border: 1px solid var(--line); color: var(--text);
+  border-radius: 9px; padding: 9px 11px; font-size: 13.5px; font-family: inherit;
+  /* 手机端最小触控目标 44 px（T-E0-038）：42 px 会让整列输入框成为最矮的可点元素。 */
+  min-height: 44px;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+textarea { min-height: 84px; resize: vertical; font-family: var(--mono); font-size: 12px; }
+
+button {
+  background: linear-gradient(135deg, var(--accent), #0ea5e9);
+  color: #04140f; border: 0; border-radius: 10px; padding: 11px 18px;
+  font-weight: 700; font-size: 13.5px; cursor: pointer;
+  min-height: 44px;
+}
+button:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+
+pre.code {
+  background: #060b16; border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px; overflow: auto; font-family: var(--mono); font-size: 11.5px;
+  color: #a8c4ea; max-height: 320px; margin: 0;
+}
+
+.verdict { font-weight: 800; letter-spacing: .06em; }
+.verdict.PASS { color: var(--accent); }
+.verdict.REVIEW { color: var(--blue); }
+.verdict.REFUSE { color: var(--danger); }
+.verdict.ABSTAIN { color: var(--warn); }
+
+.sev-critical { color: var(--danger); font-weight: 700; }
+.sev-high { color: #fb923c; font-weight: 600; }
+.sev-medium { color: var(--warn); }
+.sev-low { color: var(--accent); }
+
+.price-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 860px) { .price-grid { grid-template-columns: 1fr; } }
+.price {
+  border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel-2);
+  display: flex; flex-direction: column;
+}
+.price.featured { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(52, 211, 153, .25); }
+.price h3 { margin: 0 0 2px; font-size: 15px; }
+.price .amt { font-size: 26px; font-weight: 800; margin: 8px 0 2px; }
+.price .amt small { font-size: 12px; color: var(--muted); font-weight: 500; }
+.price ul { margin: 12px 0 0; padding-left: 17px; color: var(--muted); font-size: 13px; }
+.price ul li { margin-bottom: 6px; }
+.price .cta { margin-top: auto; padding-top: 16px; }
+
+.note { color: var(--muted); font-size: 12px; border-left: 2px solid var(--line); padding-left: 10px; margin-top: 14px; }
+.err { color: var(--danger); font-size: 13px; }
+.hidden { display: none; }
+.mono { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+footer { color: var(--muted); font-size: 12px; text-align: center; padding: 26px 22px 40px; }
+
+@media (max-width: 760px) {
+  header.top { padding: 14px 16px; gap: 10px; flex-wrap: nowrap; }
+  .brand .mark { width: 32px; height: 32px; font-size: 16px; }
+  .brand h1 { font-size: 14px; }
+  .brand p { display: none; }
+
+  #nav-toggle { display: flex; }
+  nav#main-nav {
+    position: fixed;
+    top: 62px;
+    right: 12px;
+    left: 12px;
+    z-index: 30;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(9, 14, 26, .97);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+  }
+  nav#main-nav.open { display: flex; }
+  nav#main-nav a {
+    margin: 0;
+    padding: 13px 14px;
+    font-size: 14.5px;
+    border-radius: 8px;
+    min-height: 44px;
+  }
+  nav#main-nav a:hover { background: rgba(96, 165, 250, .08); }
+
+  main { padding: 16px 12px 60px; }
+  section.card { padding: 16px 14px; }
+  .banner { font-size: 10px; padding: 8px 10px; letter-spacing: .05em; }
+  .action-hero .value { font-size: 24px; }
+  .metric .v { font-size: 20px; }
+  .layer-row { grid-template-columns: 96px 1fr; }
+  .layer-row .amt { grid-column: 2; text-align: left; }
+  .price { padding: 14px; }
+  .price .amt { font-size: 22px; }
+}
+
+</style>
+</head>
+<body>
+<div class="banner">Decision support only — no production authority — release gate: DENY</div>
+<header class="top">
+  <div class="brand">
+    <div class="mark">V</div>
+    <div>
+      <h1>Verity — Family Wealth Engine E0</h1>
+      <p>Understand the family first. Then compute what would destroy it. Only then look for a plan.</p>
+    </div>
+  </div>
+  <nav>
+    <a href="#today">Today</a><a href="#protection">Protection</a><a href="#risk">Risk</a><a href="#cohort">Cohort</a><a href="#pricing">Pricing</a><a href="#beta">Beta</a>
+  </nav>
+</header>
+<main>
+  <section class="card">
+    <h2>Engine status</h2>
+    <div class="sub">This is a static preview generated by a real run of the E0 engine over the synthetic cohort. It makes no network requests.</div>
+    <div class="grid c4">
+      <div class="metric"><div class="k">Algorithm</div><div class="v info">e0.4.0</div><div class="h">frozen engine version</div></div>
+      <div class="metric"><div class="k">Production authority</div><div class="v warn">OFF</div><div class="h">no production authority</div></div>
+      <div class="metric"><div class="k">Release gate</div><div class="v neg">DENY</div><div class="h">release stays denied</div></div>
+      <div class="metric"><div class="k">Synthetic households</div><div class="v ">50</div><div class="h">16 normal / 12 boundary / 10 failure / 12 abstain</div></div>
+    </div>
+  </section>
+  <section class="card" id="today"><h2>Verity Today</h2>
+<div class="sub">Household <span class="mono">SYN-N01</span> &middot; run <span class="mono">run_static_SYN-N01</span> &middot; algorithm e0.4.0</div>
+<div class="action-hero" style="margin-bottom:16px"><div><div class="label">Today&rsquo;s action</div><div class="value">REBALANCE</div></div><div class="why">Holdings drift 45.3% from the policy allocation, above the 5% threshold.</div></div>
+<div class="grid c5">
+<div class="metric"><div class="k">Wealth value</div><div class="v ">830,000</div><div class="h">recorded household assets</div></div>
+<div class="metric"><div class="k">Safety days</div><div class="v pos">2,615.8</div><div class="h">liquid cover if income stops</div></div>
+<div class="metric"><div class="k">Goal probability</div><div class="v info">47%</div><div class="h">scenario-implied, not a forecast</div></div>
+<div class="metric"><div class="k">60/40 benchmark</div><div class="v ">5.1%</div><div class="h">fixed documented constant</div></div>
+<div class="metric"><div class="k">Relative</div><div class="v neg">-0.4%</div><div class="h">simulated minus benchmark</div></div>
+</div></section>
+<section class="card" id="protection"><h2>Integrated protection plan</h2>
+<div class="sub">Household <span class="mono">SYN-N01</span> &middot; run <span class="mono">run_static_SYN-N01</span></div>
+<div class="sub">Six domains — cash buffer, insurance, assets, debt, legal and social security. Missing records are NOT_RECORDED, never assumed.</div>
+<span class="pill bad">GAPS</span> <span class="pill info">综合保护方案存在缺口；按优先级行动，先解决生存相关缺口。</span>
+<table><thead><tr><th>Domain</th><th>Status</th><th>Finding</th></tr></thead><tbody>
+<tr><td>现金缓冲</td><td><span class="pill ok">SECURED</span></td><td>安全天数 2,616 天，现金缺口为零，应急金目标已覆盖。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>保险保障</td><td><span class="pill bad">GAP</span></td><td>被记录的保障存在缺口；缺口按保障能力逐一列出。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"><li>P0 · 补齐寿险/身故保障缺口 · ≈900,000</li><li>P0 · 补齐失能/收入保障缺口 · ≈90,000</li><li>P1 · 补齐医疗/健康保障缺口 · ≈90,000</li><li>P1 · 补齐责任保障缺口 · ≈280,000</li></ul></td></tr>
+<tr><td>资产结构</td><td><span class="pill ok">SECURED</span></td><td>资产结构在参考范围内，无集中度或回撤预警。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>债务压力</td><td><span class="pill ok">SECURED</span></td><td>强制性债务偿付占收入 10.0%，低于 35% 参考线。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>法律安排</td><td><span class="pill warn">NOT_RECORDED</span></td><td>未记录任何法律安排；法律状态无法评估（证据不足，不作假设）。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"><li>P2 · 记录法律安排并纳入家庭档案</li></ul></td></tr>
+<tr><td>社会保障</td><td><span class="pill warn">NOT_RECORDED</span></td><td>未记录任何社会保障安排；社会保障状态无法评估（证据不足，不作假设）。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"><li>P2 · 记录社会保障安排并纳入家庭档案</li></ul></td></tr>
+</tbody></table>
+<h3 style="margin:18px 0 8px">Priority actions</h3>
+<table><thead><tr><th>Priority</th><th>Domain</th><th>Action</th><th>Rationale</th><th class="num">Cost est.</th></tr></thead><tbody>
+<tr><td><span class="pill bad">P0</span></td><td>保险保障</td><td>补齐寿险/身故保障缺口</td><td>被记录保障低于测算需求（缺口 900,000）。覆盖缺口清单见保险审计。</td><td class="num">900,000</td></tr>
+<tr><td><span class="pill bad">P0</span></td><td>保险保障</td><td>补齐失能/收入保障缺口</td><td>被记录保障低于测算需求（缺口 90,000）。覆盖缺口清单见保险审计。</td><td class="num">90,000</td></tr>
+<tr><td><span class="pill warn">P1</span></td><td>保险保障</td><td>补齐医疗/健康保障缺口</td><td>被记录保障低于测算需求（缺口 90,000）。覆盖缺口清单见保险审计。</td><td class="num">90,000</td></tr>
+<tr><td><span class="pill warn">P1</span></td><td>保险保障</td><td>补齐责任保障缺口</td><td>被记录保障低于测算需求（缺口 280,000）。覆盖缺口清单见保险审计。</td><td class="num">280,000</td></tr>
+<tr><td><span class="pill info">P2</span></td><td>法律安排</td><td>记录法律安排并纳入家庭档案</td><td>缺失记录不等于没有问题；补齐后才能评估该领域。</td><td class="num">&mdash;</td></tr>
+<tr><td><span class="pill info">P2</span></td><td>社会保障</td><td>记录社会保障安排并纳入家庭档案</td><td>缺失记录不等于没有问题；补齐后才能评估该领域。</td><td class="num">&mdash;</td></tr>
+</tbody></table>
+<div class="note">综合保护方案横跨现金、保险、资产、债务、法律与社会保障六个领域；系统不推荐任何具体产品、机构或律师，只报告被记录的事实、缺口与先后顺序。</div>
+</section>
+<section class="card" id="risk"><h2>家庭风险排序 Risk ranking</h2><div class="sub">Household <span class="mono">SYN-N01</span> &middot; run <span class="mono">run_static_SYN-N01</span></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"><span class="pill ok">RANKED</span><span class="pill bad">overall CRITICAL</span><span class="pill info">3 risks &middot; 1 active</span><span class="pill">top risk: insurance_gap</span></div><div class="scroll"><table><thead><tr><th class="num">#</th><th>Risk</th><th>Category</th><th>Severity</th><th class="num">Probability</th><th class="num">Score</th><th>Status</th><th>Evidence &amp; response</th></tr></thead><tbody><tr><td class="num">1</td><td><strong>被记录保障存在缺口</strong><div class="note" style="margin-top:3px">Recorded protection below computed need</div></td><td>insurance</td><td class="sev-critical">critical</td><td class="num">70%</td><td class="num">2.80</td><td><span class="pill bad">ACTIVE</span></td><td>保障缺口合计 1,360,000，最大缺口来自 life。<div class="note" style="margin-top:3px">按保险审计缺口清单优先补齐关键保障能力。</div></td></tr><tr><td class="num">2</td><td><strong>法律安排证据缺失</strong><div class="note" style="margin-top:3px">Legal arrangements not recorded</div></td><td>legal</td><td class="sev-medium">medium</td><td class="num">35%</td><td class="num">0.70</td><td><span class="pill info">MONITOR</span></td><td>未记录任何法律安排；法律状态无法评估（证据不足，不作假设）。<div class="note" style="margin-top:3px">补录遗嘱、受益人指定、监护与授权委托等法律安排。</div></td></tr><tr><td class="num">3</td><td><strong>社会保障记录缺失</strong><div class="note" style="margin-top:3px">Social security records missing</div></td><td>social</td><td class="sev-medium">medium</td><td class="num">35%</td><td class="num">0.70</td><td><span class="pill info">MONITOR</span></td><td>未记录任何社会保障安排；社会保障状态无法评估（证据不足，不作假设）。<div class="note" style="margin-top:3px">补录社保、医保、基本养老金与就业援助记录。</div></td></tr></tbody></table></div><div class="note">score = severity_weight * probability, where probability is a documented deterministic heuristic (never a forecast); sorted by score descending. Risk ranking is decision support, not a prediction. Probability is an evidence-based heuristic, not a statistical forecast.</div></section>
+<section class="card"><h2>Family money layering</h2>
+<div class="sub">Survival is funded first. Growth receives only what survival, rigid duty and protection leave behind.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+<span class="pill ok">funding: FUNDED</span>
+<span class="pill">total assets 830,000</span>
+<span class="pill">growth share 86.9%</span>
+</div>
+<div class="layer-row"><div class="name">Survival</div><div class="bar"><i class="cash" style="width:3.56%"></i></div><div class="amt">29,589 &middot; 3.6%</div></div>
+<div class="layer-row"><div class="name">Near-term duty</div><div class="bar"><i class="bond" style="width:9.40%"></i></div><div class="amt">78,000 &middot; 9.4%</div></div>
+<div class="layer-row"><div class="name">Protection</div><div class="bar"><i class="prot" style="width:0.18%"></i></div><div class="amt">1,500 &middot; 0.2%</div></div>
+<div class="layer-row"><div class="name">Long-term growth</div><div class="bar"><i class="index" style="width:69.49%"></i></div><div class="amt">576,729 &middot; 69.5%</div></div>
+<div class="layer-row"><div class="name">High-risk opportunity</div><div class="bar"><i class="equity" style="width:17.37%"></i></div><div class="amt">144,182 &middot; 17.4%</div></div>
+</section>
+<section class="card"><h2>Family safety</h2>
+<div class="sub">How long can this family survive if income stops today?</div><div class="grid c4">
+<div class="metric"><div class="k">Safety days</div><div class="v pos">2,615.8</div><div class="h">liquid cover at essential spend</div></div>
+<div class="metric"><div class="k">Cash gap</div><div class="v pos">0</div><div class="h">shortfall versus the survival floor</div></div>
+<div class="metric"><div class="k">Debt pressure</div><div class="v pos">10.0%</div><div class="h">mandatory debt service over income</div></div>
+<div class="metric"><div class="k">Untouchable</div><div class="v info">400,000</div><div class="h">wealth unreachable in a crisis</div></div>
+</div>
+<div class="note">No material risk flags were raised for this household.</div>
+</section>
+<section class="card"><h2>Goal feasibility</h2>
+<div class="sub">Four permitted answers. Verity refuses to judge when evidence is insufficient.</div>
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+<div class="verdict PASS" style="font-size:30px">PASS</div>
+<div class="note" style="border:0;margin:0">The goal fits inside the household&#x27;s survivable risk budget; simulation may proceed.</div></div>
+<div style="margin-bottom:12px">
+<span class="pill info">GOAL_WITHIN_RISK_BUDGET</span> 
+</div><ul style="color:var(--muted);font-size:13.5px">
+<li>Safety days 2615.8 clear the 180-day threshold and the 7.0% target sits inside a 30.0% loss budget.</li>
+</ul></section>
+<section class="card"><h2>Multi-asset simulation</h2>
+<div class="sub">Simulated only. No trade is executed, no security is named, no return is promised.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+<span class="pill ok">growth plan authorised</span>
+<span class="pill ok">loss-budget fit yes</span>
+<span class="pill info">modelled crash -29.2%</span>
+<span class="pill">2000 seeded paths</span></div>
+<table><thead><tr><th>Asset class</th><th class="num">Weight</th><th class="num">Amount</th><th>Share</th></tr></thead><tbody>
+<tr><td>Cash</td><td class="num">6.4%</td><td class="num">52,989</td><td><div class="bar"><i class="index" style="width:6.38%"></i></div></td></tr>
+<tr><td>Bonds</td><td class="num">22.8%</td><td class="num">188,900</td><td><div class="bar"><i class="index" style="width:22.76%"></i></div></td></tr>
+<tr><td>Global index</td><td class="num">51.3%</td><td class="num">425,595</td><td><div class="bar"><i class="index" style="width:51.28%"></i></div></td></tr>
+<tr><td>Equity</td><td class="num">2.9%</td><td class="num">23,741</td><td><div class="bar"><i class="index" style="width:2.86%"></i></div></td></tr>
+<tr><td>Gold</td><td class="num">12.4%</td><td class="num">102,730</td><td><div class="bar"><i class="index" style="width:12.38%"></i></div></td></tr>
+<tr><td>Option protection</td><td class="num">4.3%</td><td class="num">36,046</td><td><div class="bar"><i class="index" style="width:4.34%"></i></div></td></tr>
+</tbody></table>
+<div class="grid c4" style="margin-top:16px">
+<div class="metric"><div class="k">Simulated return</div><div class="v info">4.7%</div><div class="h">seeded model, not a forecast</div></div>
+<div class="metric"><div class="k">Simulated volatility</div><div class="v ">8.7%</div><div class="h">standard deviation across paths</div></div>
+<div class="metric"><div class="k">Simulated 5% drawdown</div><div class="v neg">-9.8%</div><div class="h">5th percentile path</div></div>
+<div class="metric"><div class="k">Protection cost</div><div class="v ">901</div><div class="h">option protection premium</div></div>
+</div>
+<div class="grid c3" style="margin-top:14px">
+<div class="metric"><div class="k">Life cover need</div><div class="v ">900,000</div><div class="h">10x income less cover in force</div></div>
+<div class="metric"><div class="k">Disability cover need</div><div class="v ">108,000</div><div class="h">60% of income less cover in force</div></div>
+<div class="metric"><div class="k">Health cover need</div><div class="v ">60,000</div><div class="h">one year of essential spending</div></div>
+</div>
+<div class="note">Risk exposure was reduced until the modelled crash fitted the family loss budget. Indicative coverage sizing only. Verity recommends no specific insurer or product; any actual placement requires a licensed partner.</div>
+</section>
+<section class="card"><h2>Stress lab</h2>
+<div class="sub">Eight mandatory scenarios, including several risks arriving together.</div>
+<div class="note">worst scenario: <strong style="color:var(--text)">combined_multi_risk</strong> &middot; breaches: <strong style="color:var(--text)">0</strong></div>
+<div class="scroll"><table><thead><tr><th>Scenario</th><th class="num">Portfolio loss</th><th class="num">Uncovered / extra cash</th><th class="num">Income loss</th><th class="num">Survival days after</th><th>Floor</th><th>Severity</th></tr></thead><tbody>
+<tr><td>Income stops for six months<div class="note" style="margin-top:4px">Income stops for 3 months; 50% is assumed to be absorbed by other sources.</div></td><td class="num">0</td><td class="num">0</td><td class="num">7,506</td><td class="num">2,570.2</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>Equity markets fall sharply<div class="note" style="margin-top:4px">Portfolio loss of 91,898.</div></td><td class="num">-91,898</td><td class="num">0</td><td class="num">0</td><td class="num">2,056.8</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>Interest rates move against the portfolio<div class="note" style="margin-top:4px">Portfolio loss of 63,186.</div></td><td class="num">-63,186</td><td class="num">0</td><td class="num">0</td><td class="num">2,231.4</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>A major uninsured medical event<div class="note" style="margin-top:4px">Uncovered medical cash outflow of 90,000.</div></td><td class="num">0</td><td class="num">90,000</td><td class="num">0</td><td class="num">2,068.3</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>Reporting-currency strength hits foreign assets<div class="note" style="margin-top:4px">No foreign-currency exposure was recorded; the scenario is inert.</div></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">2,615.8</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>Costs spiral while a rate hike reprices debt<div class="note" style="margin-top:4px">Essential costs escalate by 15% (9,000) and a 1.5pp rate hike adds 4,200 of debt service. Portfolio loss of 68,386.</div></td><td class="num">-68,386</td><td class="num">13,200</td><td class="num">0</td><td class="num">2,119.5</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>The largest income stream stops for a year<div class="note" style="margin-top:4px">The largest income stream provides 50% of household income (90,000) and stops for 12 months.</div></td><td class="num">0</td><td class="num">0</td><td class="num">90,000</td><td class="num">2,068.3</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+<tr><td>Crash, rate move, medical shock and income stop together<div class="note" style="margin-top:4px">Income stops for 3 months; 50% is assumed to be absorbed by other sources. Uncovered medical cash outflow of 90,000. Portfolio loss of 144,392.</div></td><td class="num">-144,392</td><td class="num">90,000</td><td class="num">7,506</td><td class="num">1,144.3</td><td><span class="pill ok">held</span></td><td class="sev-low">low</td></tr>
+</tbody></table></div></section>
+<section class="card"><h2>Evidence &amp; audit</h2>
+<div class="sub">Every result stores inputs, sources, algorithm version, assumptions, digests and a hash-chained audit record.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+<span class="pill ok">VERIFIED</span>
+<span class="pill info">run run_static_SYN-N01</span>
+<span class="pill">algorithm e0.4.0</span></div>
+<div class="grid c3">
+<div class="metric"><div class="k">Inputs digest</div><div class="v "><span class="mono">590b9b5d08f5a3418f29dae70d4b9283&hellip;</span></div><div class="h">sha256 of the household input</div></div>
+<div class="metric"><div class="k">Output digest</div><div class="v "><span class="mono">6288b1141c168e105b46a6ecb5cc3d08&hellip;</span></div><div class="h">sha256 of the engine output</div></div>
+<div class="metric"><div class="k">Audit record hash</div><div class="v "><span class="mono">42388286268990808c9427317150dfc9&hellip;</span></div><div class="h">hash-chained to the genesis record</div></div>
+</div>
+<div class="grid c2" style="margin-top:14px"><div>
+<div class="k" style="color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Sources</div><ul style="color:var(--muted);font-size:13px;margin:0;padding-left:17px">
+<li>synthetic_household_profile</li>
+<li>engine_spec:docs/INTERFACE_FREEZE_V0_1.md</li>
+<li>algorithm:verity-family-wealth-engine-e0</li>
+<li>synthetic_cohort:data/synthetic/households.json</li>
+</ul></div><div>
+<div class="k" style="color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Limits</div><ul style="color:var(--muted);font-size:13px;margin:0;padding-left:17px">
+<li>Synthetic data only; no real client data is used anywhere in E0.</li>
+<li>Simulation output is not a forecast and is not real performance.</li>
+<li>No specific security, fund, insurer or product is recommended.</li>
+</ul></div></div>
+<div class="note">Decision support only. Not investment, legal, tax or insurance advice. No production authority; release gate is DENY.</div>
+</section>
+  <section class="card" id="protection-demo"><h2>Integrated protection plan</h2>
+<div class="sub">Household <span class="mono">SYN-DP01</span> &middot; fully recorded demo — all six domains secured, including legal and social security.</div>
+<div class="sub">Six domains — cash buffer, insurance, assets, debt, legal and social security. Missing records are NOT_RECORDED, never assumed.</div>
+<span class="pill ok">SECURED</span> <span class="pill info">六个保护领域均已得到记录或覆盖。</span>
+<table><thead><tr><th>Domain</th><th>Status</th><th>Finding</th></tr></thead><tbody>
+<tr><td>现金缓冲</td><td><span class="pill ok">SECURED</span></td><td>安全天数 2,555 天，现金缺口为零，应急金目标已覆盖。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>保险保障</td><td><span class="pill ok">SECURED</span></td><td>被记录的保障覆盖全部测算需求。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>资产结构</td><td><span class="pill ok">SECURED</span></td><td>资产结构在参考范围内，无集中度或回撤预警。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>债务压力</td><td><span class="pill ok">SECURED</span></td><td>强制性债务偿付占收入 6.7%，低于 35% 参考线。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>法律安排</td><td><span class="pill ok">SECURED</span></td><td>法律记录完整（4/4），无需补录。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+<tr><td>社会保障</td><td><span class="pill ok">SECURED</span></td><td>社会保障记录完整（4/4），无需补录。<ul style="margin:6px 0 0 18px;color:var(--muted);font-size:12.5px"></ul></td></tr>
+</tbody></table>
+<h3 style="margin:18px 0 8px">Priority actions</h3>
+<table><thead><tr><th>Priority</th><th>Domain</th><th>Action</th><th>Rationale</th><th class="num">Cost est.</th></tr></thead><tbody>
+</tbody></table>
+<div class="note">综合保护方案横跨现金、保险、资产、债务、法律与社会保障六个领域；系统不推荐任何具体产品、机构或律师，只报告被记录的事实、缺口与先后顺序。</div>
+</section>
+  <section class="card" id="cohort"><h2>Synthetic cohort matrix</h2>
+<div class="sub">50 designed households: 16 normal, 12 boundary, 10 failure, 12 abstain. Boundary households sit exactly on a contract threshold.</div>
+<div style="margin-bottom:12px"><span class="pill ok">50 households &middot; designed behaviour matched &middot; ABSTAIN 17 &middot; PASS 23 &middot; REFUSE 7 &middot; REVIEW 3</span></div>
+<div class="scroll"><table><thead><tr><th>Household</th><th>Cohort</th><th>Designed</th><th>Actual</th><th>Today&rsquo;s action</th><th class="num">Safety days</th><th>Reason codes</th></tr></thead><tbody>
+<tr><td class="mono">SYN-N01</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,615.8</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N02</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,433.3</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N03</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,041.7</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N04</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,369.2</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N05</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,851.6</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N06</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,568.9</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N07</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,129.2</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N08</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,962.9</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N09</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,098.8</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N10</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,433.3</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N11</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,858.6</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N12</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">4,043.1</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N13</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,065.1</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N14</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,564.1</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N15</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">3,467.5</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-N16</td><td>normal</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">2,871.3</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B01</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>REBALANCE</td><td class="num">1,825.0</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B02</td><td>boundary</td><td class="verdict REVIEW">REVIEW</td><td class="verdict REVIEW">REVIEW</td><td>HEDGE</td><td class="num">90.0</td><td class="mono">SURVIVAL_BUFFER_THIN</td></tr>
+<tr><td class="mono">SYN-B03</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>HEDGE</td><td class="num">180.0</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B04</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>HEDGE</td><td class="num">400.0</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B05</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>HEDGE</td><td class="num">1,368.8</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B06</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>HEDGE</td><td class="num">1,368.8</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B07</td><td>boundary</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">1,368.8</td><td class="mono">LOSS_TOLERANCE_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-B08</td><td>boundary</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">80.0</td><td class="mono">SURVIVAL_DAYS_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-B09</td><td>boundary</td><td class="verdict REVIEW">REVIEW</td><td class="verdict REVIEW">REVIEW</td><td>HEDGE</td><td class="num">179.0</td><td class="mono">SURVIVAL_BUFFER_THIN</td></tr>
+<tr><td class="mono">SYN-B10</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>HEDGE</td><td class="num">1,368.8</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-B11</td><td>boundary</td><td class="verdict REVIEW">REVIEW</td><td class="verdict REVIEW">REVIEW</td><td>HEDGE</td><td class="num">400.0</td><td class="mono">DEBT_PRESSURE_HIGH</td></tr>
+<tr><td class="mono">SYN-B12</td><td>boundary</td><td class="verdict PASS">PASS</td><td class="verdict PASS">PASS</td><td>HEDGE</td><td class="num">180.0</td><td class="mono">GOAL_WITHIN_RISK_BUDGET</td></tr>
+<tr><td class="mono">SYN-F01</td><td>failure</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">0.0</td><td class="mono">INCONSISTENT_INPUT</td></tr>
+<tr><td class="mono">SYN-F02</td><td>failure</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">1,990.9</td><td class="mono">INCONSISTENT_INPUT</td></tr>
+<tr><td class="mono">SYN-F03</td><td>failure</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">0.0</td><td class="mono">INCONSISTENT_INPUT</td></tr>
+<tr><td class="mono">SYN-F04</td><td>failure</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">60.8</td><td class="mono">INCONSISTENT_INPUT</td></tr>
+<tr><td class="mono">SYN-F05</td><td>failure</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">50.0</td><td class="mono">SURVIVAL_DAYS_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-F06</td><td>failure</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">1,825.0</td><td class="mono">LOSS_TOLERANCE_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-F07</td><td>failure</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">36.5</td><td class="mono">SURVIVAL_DAYS_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-F08</td><td>failure</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">76.8</td><td class="mono">SURVIVAL_DAYS_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-F09</td><td>failure</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">INCONSISTENT_INPUT</td></tr>
+<tr><td class="mono">SYN-F10</td><td>failure</td><td class="verdict REFUSE">REFUSE</td><td class="verdict REFUSE">REFUSE</td><td>ABSTAIN</td><td class="num">81.1</td><td class="mono">SURVIVAL_DAYS_BELOW_FLOOR</td></tr>
+<tr><td class="mono">SYN-A01</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A02</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A03</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A04</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A05</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A06</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A07</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A08</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A09</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A10</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A11</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+<tr><td class="mono">SYN-A12</td><td>abstain</td><td class="verdict ABSTAIN">ABSTAIN</td><td class="verdict ABSTAIN">ABSTAIN</td><td>ABSTAIN</td><td class="num">&mdash;</td><td class="mono">MISSING_REQUIRED_INPUT</td></tr>
+</tbody></table></div></section>
+  
+<section class="card" id="pricing">
+  <h2>Pricing</h2>
+  <div class="sub">Verity does not sell investments and does not take custody. It sells the decision layer around the family balance sheet.</div>
+  <div class="price-grid">
+    <div class="price">
+      <h3>Free</h3><div class="amt">0 <small>/ forever</small></div>
+      <ul><li>Household intake and validation</li><li>Safety days and cash gap</li>
+      <li>One feasibility verdict per month</li><li>PASS / REVIEW / REFUSE / ABSTAIN vocabulary</li>
+      <li>Full method disclosure</li></ul>
+      <div class="cta"><button class="ghost">Start free</button></div>
+    </div>
+    <div class="price featured">
+      <h3>Family</h3><div class="amt">29 <small>/ month per household</small></div>
+      <ul><li>Everything in Free</li><li>Unlimited verdicts and re-runs</li>
+      <li>All eight stress scenarios, including combined multi-risk</li>
+      <li>Monthly Verity Today and drift tracking</li><li>Evidence and audit export</li>
+      <li>Insurance audit across all policies already in force</li></ul>
+      <div class="cta"><button>Start 14-day trial</button></div>
+    </div>
+    <div class="price">
+      <h3>Institution</h3><div class="amt">Custom <small>/ annual licence</small></div>
+      <ul><li>Embedded verdict engine for advisers and banks</li>
+      <li>Evidence and audit API (<span class="mono">verity.evidence.audit/v1</span>)</li>
+      <li>Cohort analysis on the partner book</li><li>Deployment review and model documentation</li>
+      <li>Requires a licensed counterparty and Founder approval</li></ul>
+      <div class="cta"><button class="ghost">Request a briefing</button></div>
+    </div>
+  </div>
+  <div class="note">Payment, custody, execution and product recommendation are out of scope for E0 and sit behind the licensed-partner boundary. No tier promises any return.</div>
+</section>
+  
+<section class="card" id="beta">
+  <h2>Closed beta application</h2>
+  <div class="sub">First 20 households. You supply a synthetic or non-sensitive profile; no account numbers, no custodian access, no real client funds.</div>
+  <div class="grid c2">
+    <div>
+      <div class="field"><label>Apply by replying with</label>
+      <div class="note">1. Your country and reporting currency.<br/>
+      2. The decision you are actually stuck on, in your own words.<br/>
+      3. The closest profile: dual-income with a mortgage / single earner with dependents /
+      pre-retirement couple / business owner with illiquid wealth / irregular income / multi-currency household.</div></div>
+      <div class="note">This static preview does not submit anything. The interactive console records applications
+      locally through <span class="mono">POST /api/v0/feedback</span>.</div>
+    </div>
+    <div>
+      <div class="metric" style="margin-bottom:12px"><div class="k">What the beta measures</div>
+      <div class="h" style="margin-top:8px;font-size:13px">Whether the family recognises the pain in the verdict,
+      whether the first verdict is trusted, whether ABSTAIN is accepted as honest rather than broken,
+      and whether a paid household returns in month two.</div></div>
+      <div class="metric"><div class="k">What is never collected</div>
+      <div class="h" style="margin-top:8px;font-size:13px">Bank or broker credentials, account numbers,
+      custody access, real holdings feeds, or identity documents. Only a synthetic or non-sensitive profile.</div></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  Verity Family Wealth Engine E0 &middot; decision support only &middot; synthetic data only &middot;
+  no production authority &middot; release gate DENY
+</footer>
+</body>
+</html>
