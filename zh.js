@@ -297,6 +297,12 @@ const RUNTIME_TRACKED_BYTES = {
 const RUNTIME_TRACKED_TOTAL = Object.values(RUNTIME_TRACKED_BYTES).reduce((a, b) => a + b.wire, 0);
 const RUNTIME_PATH = /(?:^|\/)pyodide\/([A-Za-z0-9._-]+)$/;
 
+/* 运行时资源基准路径（Round 40）：控制台在域根时是 "./"；在 /family/ 子路径下由页面
+   把 window.VERITY_RUNTIME_BASE 覆写成 "../"，否则 pyodide/ 与 engine_bundle.js 会被
+   请求到 /family/ 子目录而全部 404，表现为「引擎一直准备中」。 */
+const RUNTIME_BASE = typeof window !== "undefined" && window.VERITY_RUNTIME_BASE ? window.VERITY_RUNTIME_BASE : "./";
+const runtimePath = (asset) => `${RUNTIME_BASE}${asset}`;
+
 const ENGINE_PHASE_LABEL = {
   idle: "引擎尚未开始准备",
   deferred: "首屏已就绪；引擎将在浏览器空闲时自动开始准备",
@@ -555,7 +561,7 @@ async function downloadRuntimeFile(name, options) {
   const spec = RUNTIME_TRACKED_BYTES[name] || {};
   const plain = Boolean(options && options.plain);
   const usePacked = !plain && Boolean(spec.packed) && supportsGzipStream();
-  const source = usePacked ? `pyodide/${spec.packed}` : `pyodide/${name}`;
+  const source = usePacked ? runtimePath(`pyodide/${spec.packed}`) : runtimePath(`pyodide/${name}`);
   const wire = usePacked ? spec.wire : spec.expand || spec.wire;
 
   const settle = (bytes, wireBytes) => {
@@ -568,7 +574,7 @@ async function downloadRuntimeFile(name, options) {
   };
 
   /* 命中本机缓存：零网络字节，直接可用。 */
-  const cached = await readCachedBytes(`pyodide/${name}`, spec.expand);
+  const cached = await readCachedBytes(runtimePath(`pyodide/${name}`), spec.expand);
   if (cached) {
     noteCacheHit(cached.byteLength);
     settle(cached, 0);
@@ -591,7 +597,7 @@ async function downloadRuntimeFile(name, options) {
       if (!usePacked) {
         const bytes = new Uint8Array(buffer);
         settle(bytes, buffer.byteLength);
-        writeCachedBytes(`pyodide/${name}`, bytes);
+        writeCachedBytes(runtimePath(`pyodide/${name}`), bytes);
         resolve(bytes);
         return;
       }
@@ -601,7 +607,7 @@ async function downloadRuntimeFile(name, options) {
             throw new Error(`${name} 解压后 ${bytes.byteLength} 字节，与声明的 ${spec.expand} 字节不符`);
           }
           settle(bytes, buffer.byteLength);
-          writeCachedBytes(`pyodide/${name}`, bytes);
+          writeCachedBytes(runtimePath(`pyodide/${name}`), bytes);
           resolve(bytes);
         })
         .catch(() => downloadRuntimeFile(name, { plain: true }).then(resolve, reject));
@@ -655,19 +661,19 @@ async function ensureBrowserEngine() {
   const run = (async () => {
     installRuntimeFetchShim();
     await preloadRuntimeFiles();
-    if (!window.VERITY_ENGINE_FILES) await loadCachedScript("engine_bundle.js");
+    if (!window.VERITY_ENGINE_FILES) await loadCachedScript(runtimePath("engine_bundle.js"));
     if (!window.VERITY_ENGINE_FILES) throw new Error("engine_bundle.js 未加载");
-    await loadCachedScript("pyodide/pyodide.js");
+    await loadCachedScript(runtimePath("pyodide/pyodide.js"));
     if (typeof window.loadPyodide !== "function") throw new Error("Pyodide 未加载");
     if (typeof window._createPyodideModule !== "function") {
       try {
-        await loadCachedModule("pyodide/pyodide.asm.js");
+        await loadCachedModule(runtimePath("pyodide/pyodide.asm.js"));
       } catch (err) {
         /* 没拿到就让 Pyodide 自己加载，不阻塞引擎启动。 */
       }
     }
     setEnginePhase("booting");
-    const py = await window.loadPyodide({ indexURL: "pyodide/" });
+    const py = await window.loadPyodide({ indexURL: runtimePath("pyodide/") });
     setEnginePhase("loading");
     py.FS.mkdirTree("/verity/engine");
     for (const [name, code] of Object.entries(window.VERITY_ENGINE_FILES)) {
@@ -2181,7 +2187,13 @@ let demoProfile = null;
 
 async function loadZhDemoFamily() {
   if (demoProfile) return demoProfile;
-  const res = await fetch("zh-demo-family.json", { headers: { Accept: "application/json" } });
+  /* 控制台同时被官网根目录与 /family/ 子路径引用：示范档案必须按运行时基址解析，
+     否则在 /family/ 下会 404，八步向导拿不到预填输入、走不到结果页。 */
+  const demoUrl = new URL(
+    `${window.VERITY_RUNTIME_BASE || ""}zh-demo-family.json`,
+    document.baseURI
+  ).href;
+  const res = await fetch(demoUrl, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`示范家庭档案不可用（HTTP ${res.status}）`);
   demoProfile = await res.json();
   return demoProfile;

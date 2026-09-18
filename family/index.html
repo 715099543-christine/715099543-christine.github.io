@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="family-locked">
 <head>
 <script data-verity="openapi">window.VERITY_OPENAPI = {
   "openapi": "3.1.0",
@@ -1753,18 +1753,95 @@
 <title>Verity AI家庭CFO · 每个家庭的AI私人CFO</title>
 <meta name="description" content="Verity AI家庭CFO：一个APP，管好全家的钱、保障和未来。先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="styles.css" />
-<link rel="stylesheet" href="zh.css" />
+<link rel="stylesheet" href="../styles.css" />
+<link rel="stylesheet" href="../zh.css" />
+<link rel="stylesheet" href="family.css" />
+<link rel="stylesheet" href="../family-insurance.css" />
 </head>
 <body>
 
-<div class="banner">仅提供决策支持 · 无生产权限 · 发布闸门 DENY · 仅使用虚拟/样本数据</div>
+<div id="family-gate" class="hidden" role="dialog" aria-modal="true" aria-label="Verity 家庭CFO 账号">
+  <div class="gate-wrap">
+    <div class="gate-brand">
+      <div class="gate-mark" aria-hidden="true">V</div>
+      <div>
+        <h2>Verity AI家庭CFO</h2>
+        <p class="gate-sub">真实账号 · 云端加密存储 · 换设备也能取回家庭档案</p>
+      </div>
+    </div>
+
+    <div class="gate-card">
+      <div class="gate-tabs" role="tablist">
+        <button type="button" class="gate-tab" id="gate-tab-login" role="tab" aria-selected="true">登录</button>
+        <button type="button" class="gate-tab" id="gate-tab-register" role="tab" aria-selected="false">注册新账号</button>
+        <button type="button" class="gate-tab hidden" id="gate-tab-unlock" role="tab" aria-selected="false">解密解锁</button>
+      </div>
+
+      <form id="gate-form-login" autocomplete="on">
+        <label for="login-email">邮箱</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" inputmode="email" required />
+        <label for="login-password">口令</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+        <div class="gate-remember">
+          <input id="login-remember" name="remember" type="checkbox" checked />
+          <label for="login-remember" style="margin:0">在此设备保持登录（刷新与重开浏览器无需再次输入口令）</label>
+        </div>
+        <button type="submit">登录并进入我的家庭CFO</button>
+      </form>
+
+      <form id="gate-form-register" class="hidden" autocomplete="on">
+        <label for="reg-email">邮箱</label>
+        <input id="reg-email" name="email" type="email" autocomplete="username" inputmode="email" required />
+        <label for="reg-password">设置口令（至少 10 位）</label>
+        <input id="reg-password" name="password" type="password" autocomplete="new-password" required minlength="10" />
+        <label for="reg-name">家庭称呼（可留空）</label>
+        <input id="reg-name" name="display_name" type="text" autocomplete="nickname" placeholder="例如：李家的家庭" />
+        <div class="gate-remember">
+          <input id="reg-remember" name="remember" type="checkbox" checked />
+          <label for="reg-remember" style="margin:0">在此设备保持登录</label>
+        </div>
+        <button type="submit">创建账号并建立家庭档案</button>
+      </form>
+
+      <form id="gate-form-unlock" class="hidden" autocomplete="on">
+        <p class="gate-sub">云端会话仍然有效，请输入口令解锁 <strong id="unlock-who">本账号</strong> 的加密家庭档案。</p>
+        <label for="unlock-password">口令</label>
+        <input id="unlock-password" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit">解密并进入</button>
+      </form>
+
+      <div id="gate-busy" class="hidden"></div>
+      <div id="gate-msg" class="hidden" role="status"></div>
+
+      <div class="gate-note">
+        <strong>你的数据存在哪里：</strong>家庭档案保存在 Verity 后台数据库里，按账号隔离；
+        在写入数据库前会先在<strong>你的浏览器里加密</strong>（口令派生密钥，PBKDF2 21 万次），
+        我们拿不到你的口令，也读不到明文家庭数据。<br />
+        <strong>不联网也能验收：</strong>退出登录后再登录，或换一台设备登录，档案都会原样恢复。<br />
+        <strong>合规声明：</strong>Verity 只提供决策支持，不销售保险、不推荐任何保险公司、不承诺收益，也不是持牌投资顾问服务。
+      </div>
+      <a class="gate-back" href="../index.html">← 返回官网首页</a>
+    </div>
+  </div>
+</div>
+
+<div id="cloud-bar">
+  <span id="cloud-chip" data-kind="ok">
+    <span id="cloud-text">已登录 · 云端档案通道就绪</span>
+  </span>
+  <span id="cloud-who"></span>
+  <button type="button" id="cloud-logout">退出登录</button>
+</div>
+
+
+<div class="banner">仅提供决策支持 · 不销售保险 · 不推荐任何保险公司 · 家庭数据加密存储于 Verity 后台数据库</div>
 
 <header class="top">
   <div class="brand">
@@ -1779,7 +1856,7 @@
     <span></span><span></span><span></span>
   </button>
   <nav id="main-nav">
-    <a href="/check/">投资核查</a>
+    <a href="../check/">投资核查</a>
     <a href="#home-dashboard">我的家庭总览</a>
     <a href="#profiles">我的家庭档案</a>
     <a href="#engine-strip">引擎准备状态</a>
@@ -1793,10 +1870,11 @@
     <a href="#r-annual-goal">年度目标与止盈</a>
     <a href="#r-risk">风险排序</a>
     <a href="#r-protection">综合保护方案</a>
+    <a href="#insurance-lab">香港保险方案实验室</a>
     <a href="#r-stress">压力测试</a>
     <a href="#r-evidence">证据与审计</a>
     <a href="#api-contract">接口契约与版本</a>
-    <a href="en.html" data-en-link>English console</a>
+    <a href="index.html" data-en-link>English console</a>
   </nav>
 </header>
 
@@ -2208,6 +2286,14 @@
     </div>
   </section>
 
+<section class="card" id="insurance-lab" aria-labelledby="insurance-lab-title">
+  <h2 id="insurance-lab-title">香港保险方案实验室 · 从保障缺口出发</h2>
+  <p class="note">这一节不卖保险、不看佣金：先算出你家还差多少保障，再在香港市场现有产品里
+  按「每年保费能补多少缺口」排序，你可以自由勾选组合，随时看合计保费与剩余缺口。
+  Verity 不是持牌保险经纪，也不推荐任何保险公司；最终投保以承保方正式条款与报价为准。</p>
+  <div id="insurance-lab-mount"></div>
+</section>
+
 </main>
 
 <!-- 结果页章节索引与回到顶部 (T-E0-040)。结果页在 320 px 上总高约一万像素，
@@ -2240,10 +2326,18 @@
 
 <footer>
   Verity AI家庭CFO · Verity E0 引擎 · 仅提供决策支持 · 无生产权限 · 发布闸门 DENY<br />
-  <a href="/privacy.html">隐私政策</a> · <a href="/terms.html">使用条款与风险声明</a> · <a href="/check/">投资核查工具</a>
+  <a href="../privacy.html">隐私政策</a> · <a href="../terms.html">使用条款与风险声明</a> · <a href="../check/">投资核查工具</a> · <a href="../index.html">官网首页</a>
 </footer>
 
-<script src="verity-digest.js"></script>
-<script src="zh.js"></script>
+<script>
+  /* 构建期可替换：留空表示接口与页面同源（/api）。
+     跨源托管时由 scripts/wire_family_api.py 写入真实地址，并同步放行 CSP connect-src。 */
+  window.__VERITY_API_BASE__ = "";
+  /* 控制台位于 /family/ 子路径：引擎运行时（pyodide/ 与 engine_bundle.js）在域根，
+     必须显式回退一级，否则运行时请求会 404 并永久卡在「引擎准备中」。 */
+  window.VERITY_RUNTIME_BASE = "../";
+</script>
+<script src="family-api.js"></script>
+<script src="family-boot.js"></script>
 </body>
 </html>

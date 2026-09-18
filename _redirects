@@ -24,5 +24,11 @@
 /en            /en.html 200
 /en/           /en.html 200
 
+# 旧版投资核查工具在根首页切换后保留于 /check/。
+/check          /check/index.html 200
+/check/         /check/index.html 200
+/check/result   /check/result/index.html 200
+/check/result/  /check/result/index.html 200
+
 # 刻意不写 `/* /index.html 200` 这类 SPA 兜底：本控制台没有客户端路径路由，
 # 兜底会把真正的 404 伪装成 200，把「资源缺失」变成看不出来的白屏。

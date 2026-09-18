@@ -15,33 +15,72 @@
  */
 
 /* 唯一来源 web/version.json；改这里必须同步那里（tests/test_version_sot.py 守住）。 */
-const PRODUCT_VERSION = "e0.25.0";
-const SHELL_CACHE = `verity-zh-shell-v${PRODUCT_VERSION}`;
+const PRODUCT_VERSION = "e0.26.0";
+const CACHE_SCHEMA = "r34-production";
+const SHELL_CACHE = `verity-zh-shell-v${PRODUCT_VERSION}-${CACHE_SCHEMA}`;
 
 const SHELL_ASSETS = [
   "./index.html",
+  "./landing.css",
+  "./install-prompt.js",
+  "./family/index.html",
+  "./family/family.css",
+  "./family/family-api.js",
+  "./family/family-boot.js",
+  "./family/manifest.webmanifest",
+  "./family-insurance.js",
+  "./family-insurance.css",
+  "./hk-insurance-products.json",
   "./zh.js",
   "./zh.css",
   "./styles.css",
   "./verity-digest.js",
-  "./zh-demo-family.json",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
+  "./check/index.html",
+  "./check/result/index.html",
+  "./assets/framework-DjPHiq1u.js",
+  "./assets/index-Coo9Kkt_.css",
+  "./assets/index-D77HOuzh.js",
+  "./assets/layout-segment-context-D8DWrJ5V.js",
+  "./assets/link-Ujj0SID-.js",
+  "./assets/page-Bc3PxXF5.js",
+  "./assets/page-DfwvNWI1.js",
+  "./assets/page-gMGkmG5n.js",
+  "./assets/rolldown-runtime-S-ySWqyJ.js",
+  "./assets/router-DC3t58rz.js",
+  "./og.png",
+  "./privacy.html",
+  "./terms.html",
 ];
 
 /* 分区一：应用外壳（允许进缓存）。分区二：接口与健康检查（永不进缓存）。 */
 const SHELL_PATHS = new Set(
   SHELL_ASSETS.map((one) => new URL(one, self.location.origin).pathname)
 );
+/* 预缓存请求同样回站根：cache.addAll() 的相对路径是相对脚本地址解析的。 */
+const SHELL_REQUESTS = SHELL_ASSETS.map((one) => new URL(one, self.location.origin).href);
 /* 只有这些页面算「zh 外壳入口」，导航响应才有资格刷新 index.html。
  *
  * S-27-05：/en.html 渲染的是英文外壳，把它留在这个集合里会让英文页面覆盖
  * 唯一的 ./index.html 缓存键，离线打开 `/` 时返回错配语言的页面。英文入口
  * 在线时正常透传；离线时不再冒充 zh 外壳（回退到 503 提示）。
  */
-const SHELL_ENTRY_PATHS = new Set(["/", "/index.html", "/zh", "/zh/", "/zh.html"]);
+/* 首页（landing）与家庭CFO控制台（/family/）各自有独立的外壳键：
+   离线时打开哪个入口，必须回它自己的那一份，不能互相冒充。 */
+const SHELL_ENTRY_PATHS = new Set(["/", "/index.html", "/landing.html", "/zh", "/zh/", "/zh.html"]);
+const FAMILY_ENTRY_PATHS = new Set(["/family", "/family/", "/family/index.html"]);
+/* 缓存键一律按「站根」绝对化。/family/sw.js 用 importScripts 复用本文件，
+   但相对路径在 Service Worker 里是按**脚本自身**解析的（./x 在子路径下会变成
+   /family/x）。缓存键和预缓存清单都必须回站根，否则 /family/ 那份外壳会写到
+   错误的键上、预缓存整批 404。 */
+const SHELL_CACHE_KEYS = {
+  shell: new URL("./index.html", self.location.origin).href,
+  family: new URL("./family/index.html", self.location.origin).href,
+};
+const CHECK_ENTRY_PATHS = new Set(["/check", "/check/", "/check/result", "/check/result/"]);
 
 function isApiRequest(url) {
   return url.pathname === "/healthz" || url.pathname.startsWith("/api/");
@@ -63,7 +102,21 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(SHELL_CACHE);
-      await cache.addAll(SHELL_ASSETS);
+      try {
+        await cache.addAll(SHELL_REQUESTS);
+      } catch (error) {
+        /* 一个资源缺失不该让整个离线外壳装不上（装不上 = 永远无法离线打开）。
+           逐个补装，缺哪个就如实报哪个，绝不因此静默跳过。 */
+        const missed = [];
+        for (const url of SHELL_REQUESTS) {
+          try {
+            await cache.add(url);
+          } catch (err) {
+            missed.push(url);
+          }
+        }
+        if (missed.length) console.warn("[verity-sw] 外壳资源缺失，已跳过：", missed.join(", "));
+      }
       await self.skipWaiting();
     })()
   );
@@ -106,14 +159,30 @@ self.addEventListener("fetch", (event) => {
         try {
           const fresh = await fetch(event.request);
           /* 只有「控制台页面 + HTML 响应」才允许刷新外壳；接口响应没有这条路径。 */
-          if (fresh && fresh.ok && isHtmlResponse(fresh) && SHELL_ENTRY_PATHS.has(url.pathname)) {
-            const cache = await caches.open(SHELL_CACHE);
-            await cache.put("./index.html", fresh.clone());
+          if (fresh && fresh.ok && isHtmlResponse(fresh)) {
+            if (FAMILY_ENTRY_PATHS.has(url.pathname)) {
+              const cache = await caches.open(SHELL_CACHE);
+              await cache.put(SHELL_CACHE_KEYS.family, fresh.clone());
+            } else if (SHELL_ENTRY_PATHS.has(url.pathname)) {
+              const cache = await caches.open(SHELL_CACHE);
+              await cache.put(SHELL_CACHE_KEYS.shell, fresh.clone());
+            }
           }
           return fresh;
         } catch (error) {
-          if (!SHELL_ENTRY_PATHS.has(url.pathname)) return offlineShellResponse();
-          const cached = await caches.match("./index.html");
+          if (CHECK_ENTRY_PATHS.has(url.pathname)) {
+            const fallback = url.pathname.startsWith("/check/result")
+              ? "./check/result/index.html"
+              : "./check/index.html";
+            return (await caches.match(fallback)) || offlineShellResponse();
+          }
+          const key = FAMILY_ENTRY_PATHS.has(url.pathname)
+            ? SHELL_CACHE_KEYS.family
+            : SHELL_ENTRY_PATHS.has(url.pathname)
+              ? SHELL_CACHE_KEYS.shell
+              : null;
+          if (!key) return offlineShellResponse();
+          const cached = await caches.match(key);
           if (cached) return cached;
           return offlineShellResponse();
         }

@@ -1231,7 +1231,7 @@
   "x-verity": {
     "api_version": "v0",
     "api_contract_version": "0.2.0",
-    "product_version": "e0.25.0",
+    "product_version": "e0.26.0",
     "algorithm_version": "e0.4.0",
     "production_authority": "OFF",
     "release_gate": "DENY",

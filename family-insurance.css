@@ -1,0 +1,29 @@
+/* Verity 香港保险方案实验室 —— 只作用于 #insurance-lab 内部，类名统一 verity-ins- 前缀。 */
+#insurance-lab .verity-ins-headline {
+  font-size: 15px; line-height: 1.7; color: #dff0ff;
+  border-left: 3px solid #2f6bff; padding: 6px 0 6px 12px; margin: 4px 0 14px;
+}
+#insurance-lab .verity-ins-note { font-size: 12.5px; line-height: 1.75; color: #93a1c4; margin: 8px 0; }
+#insurance-lab .verity-ins-note.verity-ins-warn { color: #ffd9a8; }
+#insurance-lab .verity-ins-sub { font-size: 11.5px; color: #7f8db0; line-height: 1.6; margin-top: 2px; }
+#insurance-lab .verity-ins-sub a { color: #8fd6ff; }
+#insurance-lab .verity-ins-block { margin: 18px 0; }
+#insurance-lab .verity-ins-block h3 { margin: 0 0 6px; font-size: 14px; color: #dbe6ff; }
+#insurance-lab .verity-ins-table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 4px;
+  display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+#insurance-lab .verity-ins-table thead th,
+#insurance-lab .verity-ins-table tbody td {
+  border-bottom: 1px solid rgba(120, 145, 200, 0.18);
+  padding: 8px 10px; text-align: left; vertical-align: top;
+}
+#insurance-lab .verity-ins-table thead th { color: #9fb0d4; font-weight: 500; white-space: nowrap; }
+#insurance-lab .verity-ins-table td.num,
+#insurance-lab .verity-ins-table th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+#insurance-lab .verity-ins-table input[type="number"] {
+  width: 120px; min-height: 40px; box-sizing: border-box; border-radius: 8px;
+  border: 1px solid rgba(120, 145, 200, 0.3); background: rgba(6, 11, 24, 0.9);
+  color: #eef2ff; font-size: 14px; padding: 6px 8px; text-align: right;
+}
+#insurance-lab .verity-ins-table input[type="checkbox"] { width: 20px; height: 20px; }

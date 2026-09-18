@@ -20,6 +20,18 @@
 /version.json
   Cache-Control: no-cache
 
+/check
+  Cache-Control: no-cache
+
+/check/
+  Cache-Control: no-cache
+
+/check/index.html
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # 入口页不缓存，保证「打开即最新」；引擎与 Pyodide 本体是带哈希校验的静态资源，可以长缓存。
 /index.html
   Cache-Control: no-cache

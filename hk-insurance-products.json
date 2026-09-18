@@ -1,0 +1,534 @@
+{
+  "verity_data_class": "public_catalog",
+  "as_of_date": "2026-09-18",
+  "verification_note": "本目录只收录可从公开官方页面核验的香港市场保障型产品。凡在公开页面无法核验的具体保费与保额一律为 null，标注「需向承保方索取正式报价」；任何条目均不含佣金、返佣或销售激励字段，排序也绝不使用这类字段。",
+  "disclaimer": "Verity 不是持牌保险经纪，不销售任何保险产品，不推荐任何保险公司。本目录只用于按保障缺口做单位成本比较；最终投保须以承保方正式条款、核保结果与报价为准。",
+  "products": [
+    {
+      "id": "hk-term-aia-wisdom",
+      "category": "定期寿险",
+      "covers": [
+        "death",
+        "terminal_illness"
+      ],
+      "insurer": "友邦保險（國際）有限公司",
+      "product_name": "摯誠定期壽險計劃",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额与续保年期定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "16-70 岁（基本计划）／15 日至 70 岁（附加契约）",
+      "term": "保障期至 85 岁；可选 1 年／5 年／20 年续保年期",
+      "coverage_highlights": [
+        "身故赔偿",
+        "末期疾病预支赔偿",
+        "保证续保（不因健康状况调高续保保费）",
+        "可按指定人生阶段加保而毋须健康申报",
+        "可转换为终身寿险而毋须再次健康申报"
+      ],
+      "exclusions": [
+        "常见除外：投保后首年自杀、既有病症未申报、战争与非法活动（以正式条款为准）"
+      ],
+      "underwriting": "需健康申报；高保额通常需要体检",
+      "waiting_period": "身故保障一般无等待期；末期疾病预支有条款规定",
+      "guaranteed_renewability": true,
+      "key_limits": "保费回赠为限时推广，非长期保证；转换权有年龄与期限限制",
+      "notes": "具体保额与保费需向承保方索取正式报价",
+      "source_url": "https://www.aia.com.hk/zh-hk/products/life/wisdom-term",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-term-manulife-pure",
+      "category": "定期寿险",
+      "covers": [
+        "death"
+      ],
+      "insurer": "宏利人壽保險（國際）有限公司",
+      "product_name": "宏利純人壽（定期壽險）",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额与年期定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方最新条款为准",
+      "term": "定期寿险，可选年期以承保方条款为准",
+      "coverage_highlights": [
+        "纯身故保障，不含储蓄成分",
+        "相对低保费取得较高身故保障",
+        "可作为家庭责任期的过渡保障"
+      ],
+      "exclusions": [
+        "常见除外：既有病症未申报、战争与非法活动（以正式条款为准）"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "以身故保障条款为准",
+      "guaranteed_renewability": null,
+      "key_limits": "定期寿险到期不保证续保，保费随年龄重定价",
+      "notes": "具体保额与保费需向承保方索取正式报价",
+      "source_url": "https://www.manulife.com.hk/zh-hk/individual/products/life/life-protection.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-life-manulife-wholelife",
+      "category": "终身寿险",
+      "covers": [
+        "death",
+        "cash_value"
+      ],
+      "insurer": "宏利人壽保險（國際）有限公司",
+      "product_name": "終身壽險計劃（含儲蓄成分）",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额与缴费期定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方最新条款为准",
+      "term": "终身（含储蓄／现金价值成分）",
+      "coverage_highlights": [
+        "终身身故保障",
+        "保单现金价值可作长期储蓄",
+        "可附加危疾、住院等附加契约"
+      ],
+      "exclusions": [
+        "储蓄成分的红利部分非保证",
+        "常见除外以正式条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "以条款为准",
+      "guaranteed_renewability": null,
+      "key_limits": "保费显著高于定期寿险；保证现金价值与预期红利不同，早期退保可能大幅亏损",
+      "notes": "是否值得用终身寿险承担保障责任，取决于家庭长期资金与现金流；具体保费需正式报价",
+      "source_url": "https://www.manulife.com.hk/zh-hk/individual/products/life/life-protection.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-ci-prudential-firstprotect2",
+      "category": "危疾保障",
+      "covers": [
+        "critical_illness"
+      ],
+      "insurer": "保誠保險有限公司",
+      "product_name": "危疾首護保II",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方最新条款为准",
+      "term": "以条款为准（含现金价值与终期红利成分）",
+      "coverage_highlights": [
+        "涵盖 74 种病况（56 种严重病况＋18 种早期严重病况）",
+        "深切治疗保障",
+        "首 10 年额外 50% 严重疾病保障",
+        "早期严重疾病最多 3 次赔偿并豁免保费",
+        "可加购每年自动提升 5% 的递增保障"
+      ],
+      "exclusions": [
+        "早期病况赔偿有次数与比例上限",
+        "首 10 年额外保障为定期性质，非终身",
+        "常见除外以正式条款为准"
+      ],
+      "underwriting": "需健康申报与核保；投保年龄与病史影响可保性",
+      "waiting_period": "一般设有 90 天等候期（以条款为准）",
+      "guaranteed_renewability": null,
+      "key_limits": "保费回赠为限时推广；多重赔偿与认知障碍保障的条文差异很大，必须逐条比对",
+      "notes": "具体保额与保费需向承保方索取正式报价",
+      "source_url": "https://www.prudential.com.hk/sc/health-insurance/critical-illness/pruhealth-critical-illness-first-protect-ii/",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-ci-aia-multicare2",
+      "category": "危疾保障",
+      "covers": [
+        "critical_illness"
+      ],
+      "insurer": "友邦保險（國際）有限公司",
+      "product_name": "愛伴航保險計劃2（多重危疾）",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方最新条款为准",
+      "term": "以条款为准",
+      "coverage_highlights": [
+        "多重危疾赔偿",
+        "认知障碍（脑退化症、阿兹海默症）不因先前重疾理赔而受限",
+        "孕期及儿童特定疾病延伸保障"
+      ],
+      "exclusions": [
+        "多重赔偿设有间隔期与分组限制",
+        "常见除外以正式条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "一般设有等候期（以条款为准）",
+      "guaranteed_renewability": null,
+      "key_limits": "产品名称与条款来自公开比较资料，投保前必须核对承保方正式条款",
+      "notes": "具体保额与保费需向承保方索取正式报价",
+      "source_url": "https://www.10life.com/zh-HK/blog/Trending-Multiple-Critical-Illness-Insurance-Comparison-AIA-vs-Manulife-vs-Prudential",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-ci-manulife-guardian",
+      "category": "危疾保障",
+      "covers": [
+        "critical_illness"
+      ],
+      "insurer": "宏利人壽保險（國際）有限公司",
+      "product_name": "守護無間危疾保／宏健守護危疾入息保障",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方最新条款为准",
+      "term": "以条款为准（入息保障型产品按确诊后分期赔付）",
+      "coverage_highlights": [
+        "多重危疾保障",
+        "入息保障型产品明确载明保费保证不变条款",
+        "确诊后分期赔付以支持长期治疗支出"
+      ],
+      "exclusions": [
+        "入息保障型的赔付方式一经选定通常不可切换回一次性赔偿",
+        "常见除外以正式条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "一般设有等候期（以条款为准）",
+      "guaranteed_renewability": null,
+      "key_limits": "产品名称与条款来自公开比较资料，投保前必须核对承保方正式条款",
+      "notes": "具体保额与保费需向承保方索取正式报价",
+      "source_url": "https://www.10life.com/zh-HK/blog/Trending-Multiple-Critical-Illness-Insurance-Comparison-AIA-vs-Manulife-vs-Prudential",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-ci-prudential-cancer-care3",
+      "category": "危疾保障",
+      "covers": [
+        "critical_illness",
+        "cancer"
+      ],
+      "insurer": "保誠保險有限公司",
+      "product_name": "危疾加護保III",
+      "currency": "HKD",
+      "premium_basis": "按投保年龄、性别、保障额定价；公开页面未列具体保费",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方最新条款为准",
+      "term": "以条款为准",
+      "coverage_highlights": [
+        "多重危疾赔偿",
+        "针对癌症的持续／复发保障设计"
+      ],
+      "exclusions": [
+        "多重赔偿设有间隔期与分组限制",
+        "常见除外以正式条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "一般设有等候期（以条款为准）",
+      "guaranteed_renewability": null,
+      "key_limits": "产品名称与条款来自公开比较资料，投保前必须核对承保方正式条款",
+      "notes": "具体保额与保费需向承保方索取正式报价",
+      "source_url": "https://www.10life.com/zh-HK/blog/Trending-Multiple-Critical-Illness-Insurance-Comparison-AIA-vs-Manulife-vs-Prudential",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-standard-aia",
+      "category": "自愿医保（标准计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "友邦保險（國際）有限公司",
+      "product_name": "自願醫保計劃認可產品 · 標準計劃",
+      "currency": "HKD",
+      "premium_basis": "标准计划的设计与最低保障由医务卫生局统一规定，各提供者产品设计大致相同，保费按年龄与性别列于官方标准保费一览表",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "0-80 岁（新单投保实际年龄，以官方名单为准）",
+      "term": "每年续保，保证续保至条款规定年龄",
+      "coverage_highlights": [
+        "标准化住院保障（最低合规要求）",
+        "保证续保",
+        "保费可申请税务扣除",
+        "未知的已有病症按计划规定逐步纳入保障"
+      ],
+      "exclusions": [
+        "标准计划保障范围固定，超出部分不赔",
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "标准计划须接受符合资格的投保申请，不可因健康状况拒保（计划规定）",
+      "waiting_period": "未知已有病症设 3 年逐步纳入期（计划规定）",
+      "guaranteed_renewability": true,
+      "key_limits": "标准计划保障额度固定，可能不足以覆盖私家医院实际开支；如需更高保障应比较灵活计划",
+      "notes": "保费请以医务卫生局官方标准保费一览表与承保方报价为准",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-standard-manulife",
+      "category": "自愿医保（标准计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "宏利人壽保險（國際）有限公司",
+      "product_name": "自願醫保計劃認可產品 · 標準計劃",
+      "currency": "HKD",
+      "premium_basis": "同属标准计划，产品设计由计划统一规定，保费按官方标准保费一览表",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "标准化住院保障",
+        "保证续保",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "按计划规定",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "标准计划之间保障内容大体相同，差别主要在服务与理赔体验，不是保障范围",
+      "notes": "保费请以官方标准保费一览表与承保方报价为准",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-standard-bupa",
+      "category": "自愿医保（标准计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "保柏（亞洲）有限公司",
+      "product_name": "自願醫保計劃認可產品 · 標準計劃",
+      "currency": "HKD",
+      "premium_basis": "同属标准计划，保费按官方标准保费一览表",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "标准化住院保障",
+        "保证续保",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "按计划规定",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "标准计划之间保障内容大体相同",
+      "notes": "保费请以官方标准保费一览表与承保方报价为准",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-flex-aia",
+      "category": "自愿医保（灵活计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "友邦保險（國際）有限公司",
+      "product_name": "自願醫保計劃認可產品 · 靈活計劃",
+      "currency": "HKD",
+      "premium_basis": "在标准计划保障之上提供更高限额与更阔范围，保费因房型与附加保障差异很大，须逐产品报价",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "整体保障高于标准计划（更高限额／更阔范围）",
+        "可选房型（普通房／半私家房／标准私家房）",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "附加保障差异大，须逐条比对",
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "灵活计划在自愿医保产品中保费差异最大，房型与附加保障是主要成本驱动",
+      "notes": "保费需向承保方索取正式报价",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-flex-manulife",
+      "category": "自愿医保（灵活计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "宏利人壽保險（國際）有限公司",
+      "product_name": "自願醫保計劃認可產品 · 靈活計劃",
+      "currency": "HKD",
+      "premium_basis": "按房型与附加保障定价，须逐产品报价",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "高于标准计划的保障限额",
+        "可选房型",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "灵活计划须整体上不低于标准计划保障，额外部分条款差异大",
+      "notes": "保费需向承保方索取正式报价",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-flex-bupa",
+      "category": "自愿医保（灵活计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "保柏（亞洲）有限公司",
+      "product_name": "自願醫保計劃認可產品 · 靈活計劃",
+      "currency": "HKD",
+      "premium_basis": "按房型与附加保障定价，须逐产品报价",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "高于标准计划的保障限额",
+        "医疗网络与理赔服务差异是主要比较点",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "服务网络差异不等于保障差异，比较时以条款为准",
+      "notes": "保费需向承保方索取正式报价",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-flex-boclife",
+      "category": "自愿医保（灵活计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "中銀集團人壽保險有限公司",
+      "product_name": "自願醫保計劃認可產品 · 靈活計劃",
+      "currency": "HKD",
+      "premium_basis": "按房型与附加保障定价，须逐产品报价",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "高于标准计划的保障限额",
+        "可作为标准计划之外的升级选择",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "同类别产品条款差异大，必须逐条比对而不是只看保费",
+      "notes": "保费需向承保方索取正式报价",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-flex-chinalife",
+      "category": "自愿医保（灵活计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "中國人壽保險（海外）股份有限公司",
+      "product_name": "自願醫保計劃認可產品 · 靈活計劃",
+      "currency": "HKD",
+      "premium_basis": "按房型与附加保障定价，须逐产品报价",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "高于标准计划的保障限额",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "需健康申报与核保",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "同类别产品条款差异大，必须逐条比对",
+      "notes": "保费需向承保方索取正式报价",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-vhis-standard-axa",
+      "category": "自愿医保（标准计划）",
+      "covers": [
+        "hospitalisation"
+      ],
+      "insurer": "安盛金融有限公司",
+      "product_name": "自願醫保計劃認可產品 · 標準計劃",
+      "currency": "HKD",
+      "premium_basis": "同属标准计划，保费按官方标准保费一览表",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以官方名单为准",
+      "term": "每年续保，保证续保",
+      "coverage_highlights": [
+        "标准化住院保障",
+        "保证续保",
+        "保费可税务扣除"
+      ],
+      "exclusions": [
+        "以官方认可产品条款为准"
+      ],
+      "underwriting": "按计划规定",
+      "waiting_period": "未知已有病症 3 年逐步纳入期",
+      "guaranteed_renewability": true,
+      "key_limits": "标准计划之间保障内容大体相同",
+      "notes": "保费请以官方标准保费一览表与承保方报价为准",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    },
+    {
+      "id": "hk-hi-bupa-corporate",
+      "category": "高端医疗",
+      "covers": [
+        "hospitalisation",
+        "overseas_medical"
+      ],
+      "insurer": "保柏（亞洲）有限公司",
+      "product_name": "高端医疗／国际医疗保障（按房型与保障地区定价）",
+      "currency": "HKD",
+      "premium_basis": "按保障地区、房型、垫底费与年龄定价；须逐产品报价",
+      "premium_hkd_per_year": null,
+      "sum_assured_hkd": null,
+      "entry_age_range": "以承保方条款为准",
+      "term": "每年续保",
+      "coverage_highlights": [
+        "较高年度限额",
+        "可选环球／亚洲保障地区",
+        "可选择垫底费以降低保费"
+      ],
+      "exclusions": [
+        "既往病症通常设等待期或除外",
+        "以正式条款为准"
+      ],
+      "underwriting": "需完整健康申报与核保",
+      "waiting_period": "既往病症设有等待期",
+      "guaranteed_renewability": null,
+      "key_limits": "高端医疗保费显著高于自愿医保；垫底费与保障地区是主要成本杠杆",
+      "notes": "保费需向承保方索取正式报价",
+      "source_url": "https://www.vhis.gov.hk/sc/consumer_corner/list-plans.html",
+      "last_verified": "2026-09-18"
+    }
+  ]
+}
