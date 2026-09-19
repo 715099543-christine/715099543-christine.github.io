@@ -65,27 +65,31 @@
   function startConsole() {
     if (unlocked) return;
     unlocked = true;
-    hide($("family-gate"));
-    document.documentElement.classList.remove("family-locked");
-    renderModeBanner();
-    renderAccountChip();
     var scripts = ["../verity-digest.js", "../zh.js", "../family-insurance.js"];
     var index = 0;
     (function next() {
-      if (index >= scripts.length) return;
+      if (index >= scripts.length) {
+        hide($("family-gate"));
+        document.documentElement.classList.remove("family-locked");
+        renderAccountChip();
+        registerShell();
+        return;
+      }
       var src = scripts[index];
       index += 1;
       var tag = document.createElement("script");
       tag.src = src;
       tag.async = false;
       tag.onerror = function () {
-        /* 可选模块（如保险实验室尚未随包发布）缺失不阻断控制台 */
-        next();
+        unlocked = false;
+        busy(false);
+        setMode("login");
+        setGateMessage("应用资源加载失败（" + src + "）。请检查网络后重新载入；系统不会打开不完整页面。", "bad");
+        show($("family-gate"));
       };
       tag.onload = next;
       document.body.appendChild(tag);
     })();
-    registerShell();
   }
 
   function registerShell() {
@@ -104,18 +108,6 @@
     if (snap.lastError) kind = "bad";
     else if (snap.syncing) kind = "busy";
     chip.dataset.kind = kind;
-    if (snap.mode === "local") {
-      if (snap.syncing) text.textContent = "正在加密保存到本机…";
-      else if (snap.lastSyncedAt) text.textContent = "本机账户 · 已加密保存到此设备 · " + snap.lastSyncedAt;
-      else text.textContent = "本机账户 · 档案只保存在此设备";
-      var whoLocal = $("cloud-who");
-      if (whoLocal) {
-        whoLocal.textContent = snap.user
-          ? (snap.user.display_name || snap.user.email) + " · " + snap.user.email + " · 本机"
-          : "";
-      }
-      return;
-    }
     if (snap.lastError) text.textContent = snap.lastError;
     else if (snap.syncing) text.textContent = "正在保存到云端…";
     else if (snap.lastSyncedAt) text.textContent = "已加密保存到云端 · " + snap.lastSyncedAt;
@@ -124,24 +116,6 @@
     if (whoEl) {
       whoEl.textContent = snap.user ? (snap.user.display_name || snap.user.email) + " · " + snap.user.email : "";
     }
-  }
-
-  /* 本机账户模式必须在界面上说清楚：这条横幅是「不会被误认为云端已保存」的唯一保证。
-     只在本机账户模式下出现；云端通道正常时不会显示。 */
-  function renderModeBanner() {
-    var snap = store.snapshot();
-    var existing = $("local-mode-banner");
-    if (snap.mode !== "local") {
-      if (existing) existing.parentNode.removeChild(existing);
-      return;
-    }
-    if (existing) return;
-    var bar = document.createElement("div");
-    bar.id = "local-mode-banner";
-    bar.setAttribute("role", "status");
-    bar.style.cssText = "position:sticky;top:0;z-index:60;padding:8px 14px;font-size:13px;line-height:1.5;background:#fff7e6;color:#7a4b00;border-bottom:1px solid #f0d9a8;text-align:center";
-    bar.textContent = "本机账户模式：云端账号通道当前不可用。家庭档案已加密保存在这台设备上，关闭、刷新、重新登录都不会丢失；换设备取回需要云端通道恢复。";
-    document.body.insertBefore(bar, document.body.firstChild);
   }
 
   function bind() {
@@ -195,7 +169,12 @@
       logout.addEventListener("click", function () {
         if (!window.confirm("退出登录会结束本机会话并清除本机密钥缓存，云端档案仍然保留。确定退出？")) return;
         logout.disabled = true;
-        store.logout().then(function () { window.location.reload(); });
+        store.logout()
+          .then(function () { window.location.reload(); })
+          .catch(function (err) {
+            logout.disabled = false;
+            setGateMessage(err.message || String(err), "bad");
+          });
       });
     }
   }
@@ -212,9 +191,6 @@
           var label = $("unlock-who");
           if (label && who) label.textContent = who.email;
           setMode("unlock");
-          if (store.mode() === "local") {
-            setGateMessage("本机账户模式：请输入口令，解密保存在这台设备上的家庭档案。", "");
-          }
           show($("family-gate"));
           return;
         }
@@ -224,11 +200,11 @@
           return;
         }
         if (result && result.offline) {
-          setMode("register");
+          setMode("login");
           setGateMessage(
             "云端账号通道当前不可用（" +
               (store.snapshot().lastError || "无法连接云端服务") +
-              "）。请用下面的「注册新账号」在本机创建加密账号继续使用：家庭档案加密保存在这台设备上，关闭、刷新、重新登录都不会丢失；换设备取回需要云端通道恢复。",
+              "）。为保护家庭数据，本机账号降级已禁用；请恢复网络后重试，已产生的待同步草稿仍保持加密。",
             "bad"
           );
           show($("family-gate"));

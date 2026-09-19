@@ -19,9 +19,6 @@
   var ACCOUNT_KEY = "verity.zh.account.v1";
   var DEVICE_KEY = "verity.zh.device.v1";
   var MIRROR_KEY = "verity.zh.secure.v1";
-  var LOCAL_ACCOUNT_KEY = "verity.zh.localaccount.v1";
-  var LOCAL_VAULT_KEY = "verity.zh.vault.v1";
-  var LOCAL_DEVICE_KEY = "verity.zh.localdevice.v1";
   var PBKDF2_ITERATIONS = 210000;
   var PUSH_DEBOUNCE_MS = 700;
 
@@ -38,8 +35,9 @@
     lastSyncedAt: "",
     queue: null,
     timer: null,
+    retryMs: 1000,
+    pendingVersion: 0,
     listeners: [],
-    /* "cloud" = 服务端账号通道；"local" = 本机账号（数据只在本设备，密文落盘）。 */
     mode: "cloud",
   };
 
@@ -124,176 +122,6 @@
     return subtle().importKey("raw", b64ToBytes(rawB64), { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
   }
 
-  /* ---------------------------------------------------- 本机账号（无服务端通道）
-
-     为什么必须有这一层：正式域名上的服务端接口通道一旦不可用（例如托管的 Worker
-     抛异常、返回 5xx），原来的实现是「失败关闭」——登录闸门永远打不开，产品直接不可用。
-     本机账号把账号与档案都留在设备上：口令在浏览器里派生密钥，档案以同一套 v1 信封
-     加密后写进 localStorage，磁盘上不出现明文。
-
-     边界（必须诚实标注给用户看）：本机账号只在当前浏览器/设备上存在；换设备取回家庭
-     档案需要服务端通道。因此本层只作为「通道不可用时的可用降级」，登录成功后用户能在
-     界面上看到「本机账户」标识，不会被误认为云端已保存。 */
-
-  function readLocalAccount() {
-    try {
-      var raw = nativeGet.call(window.localStorage, LOCAL_ACCOUNT_KEY);
-      if (!raw) return null;
-      var parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object" || !parsed.email_norm || !parsed.kdf_salt || !parsed.verifier) {
-        return null;
-      }
-      return parsed;
-    } catch (ignored) {
-      return null;
-    }
-  }
-
-  function writeLocalAccount(account) {
-    try {
-      nativeSet.call(window.localStorage, LOCAL_ACCOUNT_KEY, JSON.stringify(account));
-      return true;
-    } catch (ignored) {
-      return false;
-    }
-  }
-
-  function clearLocalAccount() {
-    try {
-      nativeRemove.call(window.localStorage, LOCAL_ACCOUNT_KEY);
-    } catch (ignored) {
-      /* 清不掉不影响会话已经结束 */
-    }
-  }
-
-  /* 本机账号的口令凭据：只存口令派生结果的 SHA-256，存不下明文口令，也不能反推密钥。 */
-  function localVerifier(key) {
-    return exportRawKey(key).then(function (rawB64) {
-      return subtle().digest("SHA-256", b64ToBytes(rawB64));
-    }).then(bytesToB64);
-  }
-
-  function writeVault() {
-    if (state.mode !== "local" || !state.key) return Promise.resolve(false);
-    var hasContent = state.cachedText !== null || state.cachedAccount !== null;
-    if (!hasContent) {
-      try {
-        nativeRemove.call(window.localStorage, LOCAL_VAULT_KEY);
-      } catch (ignored) {
-        /* 删不掉不影响已经清空的语义 */
-      }
-      state.lastSyncedAt = nowStamp();
-      return Promise.resolve(true);
-    }
-    var payload = JSON.stringify({
-      account: state.cachedAccount,
-      profiles: state.cachedText,
-      revision: state.revision,
-      saved_at: nowStamp(),
-    });
-    return encryptText(state.key, payload).then(function (envelope) {
-      nativeSet.call(window.localStorage, LOCAL_VAULT_KEY, envelope);
-      state.lastSyncedAt = nowStamp();
-      return true;
-    });
-  }
-
-  function readVault() {
-    if (!state.key) return Promise.resolve(false);
-    var envelope = nativeGet.call(window.localStorage, LOCAL_VAULT_KEY);
-    if (!envelope) return Promise.resolve(false);
-    return decryptText(state.key, envelope).then(function (text) {
-      var parsed = JSON.parse(text);
-      state.cachedText = typeof parsed.profiles === "string" ? parsed.profiles : null;
-      state.cachedAccount = typeof parsed.account === "string" ? parsed.account : null;
-      state.revision = typeof parsed.revision === "number" ? parsed.revision : 0;
-      return true;
-    }).catch(function () {
-      return false;
-    });
-  }
-
-  /* 服务端通道不可用：网络错误、5xx。4xx（口令错、邮箱重复）必须原样报给用户。 */
-  function isChannelUnavailable(err) {
-    if (!err) return false;
-    if (err.code === "offline") return true;
-    if (typeof err.status === "number" && err.status >= 500) return true;
-    return false;
-  }
-
-  function adoptLocalSession(account, remember, cause) {
-    state.mode = "local";
-    state.user = { email: account.email, display_name: account.display_name || "" };
-    state.kdfSalt = account.kdf_salt;
-    state.revision = 0;
-    state.lastSyncedAt = "";
-    var note = "本机账户模式：云端账号通道不可用（" + ((cause && (cause.message || cause)) || "未说明原因") + "），家庭档案只加密保存在这台设备上，换设备取回需要云端通道恢复。";
-    state.lastError = note;
-    return deriveContentKey(account.__password, account.kdf_salt).then(function (key) {
-      state.key = key;
-      return Promise.all([readVault(), readMirror()]).then(function (results) {
-        if (!results[0] && results[1]) {
-          /* 旧版本留下的密文镜像也能接管，避免升级后看到空档案。 */
-          return writeVault().then(function () {
-            return null;
-          });
-        }
-        return null;
-      });
-    }).then(function () {
-      if (remember) return rememberDevice();
-      return null;
-    });
-  }
-
-  function registerLocal(email, password, displayName, remember, cause) {
-    var norm = String(email || "").trim().toLowerCase();
-    var existing = readLocalAccount();
-    if (existing && existing.email_norm !== norm) {
-      return Promise.reject(new Error(
-        "本机已经有一个本机账号（" + existing.email + "）。本机账户模式下一台设备只保存一个账号，请改用该账号登录。"
-      ));
-    }
-    var saltB64 = bytesToB64(randomBytes(16));
-    return deriveContentKey(password, saltB64).then(function (key) {
-      return localVerifier(key).then(function (verifier) {
-        var account = {
-          email: String(email || "").trim(),
-          email_norm: norm,
-          display_name: String(displayName || "").trim(),
-          kdf_salt: saltB64,
-          verifier: verifier,
-          created_at: nowStamp(),
-        };
-        if (!writeLocalAccount(account)) {
-          throw new Error("浏览器拒绝了本机存储（可能是隐私模式或存储已满），无法创建本机账号。");
-        }
-        account.__password = password;
-        return adoptLocalSession(account, remember, cause);
-      });
-    });
-  }
-
-  function loginLocal(email, password, remember, cause) {
-    var norm = String(email || "").trim().toLowerCase();
-    var account = readLocalAccount();
-    if (!account) {
-      return Promise.reject(new Error("本机没有找到这个账号，请改用「注册新账号」在本机创建。"));
-    }
-    if (account.email_norm !== norm) {
-      return Promise.reject(new Error("本机保存的账号是 " + account.email + "，与本机档案不匹配。"));
-    }
-    return deriveContentKey(password, account.kdf_salt).then(function (key) {
-      return localVerifier(key).then(function (verifier) {
-        if (verifier !== account.verifier) {
-          throw new Error("本机账户口令不正确。");
-        }
-        account.__password = password;
-        return adoptLocalSession(account, remember, cause);
-      });
-    });
-  }
-
   /* ------------------------------------------------------------------ 网络层 */
 
   function api(path, options) {
@@ -370,7 +198,8 @@
 
   /* ------------------------------------------------ localStorage 代理（零侵入）
 
-     只接管两个键：家庭档案库与「本机账户」。其余键一律交还原生实现。
+     只接管家庭档案库与账户元数据键。两者都只作为当前会话缓存与加密待同步草稿，
+     永久权威副本仍在云端。其余键一律交还原生实现。
      触发方式用 Storage.prototype 覆盖而不是重定义 window.localStorage，
      这样无论 zh.js 通过 window.localStorage 还是直接 Storage.prototype 访问都生效。 */
   var nativeGet = window.Storage.prototype.getItem;
@@ -382,10 +211,7 @@
       key === PROFILE_KEY ||
       key === ACCOUNT_KEY ||
       key === MIRROR_KEY ||
-      key === DEVICE_KEY ||
-      key === LOCAL_ACCOUNT_KEY ||
-      key === LOCAL_DEVICE_KEY ||
-      key === LOCAL_VAULT_KEY
+      key === DEVICE_KEY
     );
   }
 
@@ -433,8 +259,10 @@
     };
   }
 
-  /* 本机只留密文镜像：断网重开也能看见上次同步的内容，磁盘上不出现明文。 */
+  /* 本机只留尚未成功同步的加密草稿；云端数据库是唯一永久权威数据源。 */
   function writeMirror() {
+    state.pendingVersion += 1;
+    var pendingVersion = state.pendingVersion;
     try {
       if (!state.key || (state.cachedText === null && state.cachedAccount === null)) {
         nativeRemove.call(window.localStorage, MIRROR_KEY);
@@ -447,6 +275,7 @@
         saved_at: nowStamp(),
       });
       encryptText(state.key, payload).then(function (envelope) {
+        if (pendingVersion !== state.pendingVersion || state.queue === null) return;
         try {
           nativeSet.call(window.localStorage, MIRROR_KEY, envelope);
         } catch (ignored) {
@@ -460,17 +289,43 @@
 
   function readMirror() {
     var envelope = nativeGet.call(window.localStorage, MIRROR_KEY);
-    if (!envelope || !state.key) return Promise.resolve(false);
+    if (!envelope || !state.key) return Promise.resolve(null);
     return decryptText(state.key, envelope)
       .then(function (text) {
         var parsed = JSON.parse(text);
-        state.cachedText = typeof parsed.profiles === "string" ? parsed.profiles : null;
-        state.cachedAccount = typeof parsed.account === "string" ? parsed.account : null;
-        return true;
+        return {
+          profiles: typeof parsed.profiles === "string" ? parsed.profiles : null,
+          account: typeof parsed.account === "string" ? parsed.account : null,
+          revision: typeof parsed.revision === "number" ? parsed.revision : 0,
+        };
       })
       .catch(function () {
-        return false;
+        return null;
       });
+  }
+
+  function encodeCloudRecord() {
+    return JSON.stringify({
+      kind: "verity.cloud.record",
+      version: 1,
+      profiles: state.cachedText,
+      account: state.cachedAccount,
+    });
+  }
+
+  function decodeCloudRecord(text) {
+    try {
+      var parsed = JSON.parse(text);
+      if (parsed && parsed.kind === "verity.cloud.record" && parsed.version === 1) {
+        return {
+          profiles: typeof parsed.profiles === "string" ? parsed.profiles : null,
+          account: typeof parsed.account === "string" ? parsed.account : null,
+        };
+      }
+    } catch (ignored) {
+      /* 旧记录的正文就是档案库 JSON 字符串。 */
+    }
+    return { profiles: text, account: null };
   }
 
   /* ------------------------------------------------------------ 推送到服务端 */
@@ -483,15 +338,15 @@
     }
     state.queue = true;
     if (state.timer) window.clearTimeout(state.timer);
+    var delay = typeof immediate === "number" ? immediate : immediate ? 0 : PUSH_DEBOUNCE_MS;
     state.timer = window.setTimeout(function () {
       state.timer = null;
       flush();
-    }, immediate ? 0 : PUSH_DEBOUNCE_MS);
+    }, delay);
     emit();
   }
 
   function flush() {
-    if (state.mode === "local") return flushLocal();
     if (state.queue === null) return Promise.resolve();
     if (state.syncing) return Promise.resolve();
     var text = state.cachedText;
@@ -500,25 +355,38 @@
       state.queue = null;
       state.syncing = true;
       emit();
-      return api("/api/family/profile", { method: "DELETE" })
+      return api("/api/family/profile", {
+        method: "DELETE",
+        body: { expected_revision: state.revision },
+      })
         .then(function () {
           state.revision = 0;
           state.lastSyncedAt = nowStamp();
           state.lastError = "";
+          state.retryMs = 1000;
+          state.pendingVersion += 1;
+          try {
+            nativeRemove.call(window.localStorage, MIRROR_KEY);
+          } catch (ignored) {
+            /* 清理失败不改变云端删除已成功的事实 */
+          }
         })
         .catch(function (err) {
           state.lastError = err.message || String(err);
+          state.queue = true;
+          state.retryMs = Math.min(state.retryMs * 2, 60000);
         })
         .then(function () {
           state.syncing = false;
           emit();
+          if (state.queue) schedulePush(state.retryMs);
         });
     }
     state.queue = null;
     state.syncing = true;
     emit();
     var expected = state.revision;
-    return encryptText(state.key, text)
+    return encryptText(state.key, encodeCloudRecord())
       .then(function (envelope) {
         return api("/api/family/profile", {
           method: "PUT",
@@ -529,7 +397,13 @@
         state.revision = res && typeof res.revision === "number" ? res.revision : expected + 1;
         state.lastSyncedAt = nowStamp();
         state.lastError = "";
-        writeMirror();
+        state.retryMs = 1000;
+        state.pendingVersion += 1;
+        try {
+          nativeRemove.call(window.localStorage, MIRROR_KEY);
+        } catch (ignored) {
+          /* 清理失败不改变云端已保存成功的事实 */
+        }
       })
       .catch(function (err) {
         if (err.code === "conflict") {
@@ -545,33 +419,17 @@
           return;
         }
         state.lastError = "保存到云端失败：" + (err.message || err);
+        state.queue = true;
+        state.retryMs = Math.min(state.retryMs * 2, 60000);
       })
       .then(function () {
         state.syncing = false;
         emit();
+        if (state.queue) schedulePush(state.retryMs);
       });
   }
 
   /* ------------------------------------------------------------ 拉取与服务端 */
-
-  /* 本机账号：落盘目标换成同设备密文库，其余语义（防抖、清空、时间戳）与云端一致。 */
-  function flushLocal() {
-    if (state.queue === null || state.syncing) return Promise.resolve();
-    state.queue = null;
-    state.syncing = true;
-    emit();
-    return writeVault()
-      .then(function () {
-        state.lastError = "本机账户模式：家庭档案已加密保存在这台设备上（换设备取回需要云端通道）。";
-      })
-      .catch(function (err) {
-        state.lastError = "保存到本机失败：" + (err.message || err);
-      })
-      .then(function () {
-        state.syncing = false;
-        emit();
-      });
-  }
 
   function pull() {
     return api("/api/family/profile").then(function (data) {
@@ -580,13 +438,44 @@
         state.revision = 0;
         state.cachedText = null;
         state.cachedAccount = null;
-        return { empty: true };
+        return readMirror().then(function (pending) {
+          if (pending) {
+            state.cachedText = pending.profiles;
+            state.cachedAccount = pending.account;
+            state.queue = true;
+            state.lastError = "发现尚未同步的加密草稿，正在恢复并重试保存到云端。";
+            schedulePush(true);
+          }
+          return { empty: !pending, pending: pending };
+        });
       }
       state.revision = typeof record.revision === "number" ? record.revision : 0;
       return decryptText(state.key, record.payload).then(function (text) {
-        state.cachedText = text;
-        return readMirror().then(function () {
-          return { empty: false };
+        var cloud = decodeCloudRecord(text);
+        state.cachedText = cloud.profiles;
+        state.cachedAccount = cloud.account;
+        return readMirror().then(function (pending) {
+          if (pending && pending.profiles === cloud.profiles && pending.account === cloud.account) {
+            state.lastSyncedAt = nowStamp();
+            state.lastError = "";
+            state.pendingVersion += 1;
+            try {
+              nativeRemove.call(window.localStorage, MIRROR_KEY);
+            } catch (ignored) {
+              /* 云端内容已与待同步草稿一致，清理失败不改变事实 */
+            }
+          } else if (pending && state.revision === Number(pending.revision || 0)) {
+            state.cachedText = pending.profiles;
+            state.cachedAccount = pending.account;
+            state.queue = true;
+            state.lastError = "发现尚未同步的加密草稿，正在恢复并重试保存到云端。";
+            schedulePush(true);
+          } else if (pending) {
+            state.cachedText = cloud.profiles;
+            state.cachedAccount = cloud.account;
+            state.lastError = "云端档案已更新，本机待同步草稿未覆盖云端；请重新检查后保存。";
+          }
+          return { empty: false, pending: Boolean(pending) };
         });
       });
     });
@@ -599,11 +488,8 @@
     state.kdfSalt = data.kdf_salt;
     return deriveContentKey(password, data.kdf_salt).then(function (key) {
       state.key = key;
-      return readMirror().then(function (hit) {
-        if (hit) return null;
-        return pull().then(function () {
-          return null;
-        });
+      return pull().then(function () {
+        return null;
       });
     });
   }
@@ -620,9 +506,6 @@
           if (remember) return rememberDevice();
           return null;
         });
-      }, function (err) {
-        if (!isChannelUnavailable(err)) throw err;
-        return registerLocal(email, password, displayName, remember, err);
       })
       .then(function () {
         state.ready = true;
@@ -644,9 +527,6 @@
           if (remember) return rememberDevice();
           return null;
         });
-      }, function (err) {
-        if (!isChannelUnavailable(err)) throw err;
-        return loginLocal(email, password, remember, err);
       })
       .then(function () {
         state.ready = true;
@@ -661,11 +541,9 @@
 
   function rememberDevice() {
     if (!state.key) return Promise.resolve();
-    /* 本机账号与云端账号的密钥不同源，必须分开存，否则会出现「记得我」之后解不开的情况。 */
-    var slot = state.mode === "local" ? LOCAL_DEVICE_KEY : DEVICE_KEY;
     return exportRawKey(state.key).then(function (raw) {
       try {
-        nativeSet.call(window.localStorage, slot, raw);
+        nativeSet.call(window.localStorage, DEVICE_KEY, raw);
       } catch (ignored) {
         /* 存不下就退化成「每次打开需要输入口令」 */
       }
@@ -675,23 +553,13 @@
   function logout() {
     if (state.timer) window.clearTimeout(state.timer);
     state.timer = null;
-    if (state.mode === "local") {
-      /* 退出本机账号只结束会话：本机账号与加密档案都保留，「重新登录数据不丢失」。 */
-      try {
-        nativeRemove.call(window.localStorage, LOCAL_DEVICE_KEY);
-      } catch (ignored) {
-        /* 清不掉不影响会话已经结束 */
-      }
-      lock();
-      return Promise.resolve();
-    }
     var pending = state.queue ? flush() : Promise.resolve();
     return pending
       .then(function () {
+        if (state.queue || state.syncing || state.lastError) {
+          throw new Error(state.lastError || "仍有家庭档案尚未同步到云端，请恢复网络并等待同步完成后再退出。");
+        }
         return api("/api/auth/logout", { method: "POST" });
-      })
-      .catch(function () {
-        return null;
       })
       .then(function () {
         try {
@@ -731,13 +599,7 @@
         return importRawKey(raw)
           .then(function (key) {
             state.key = key;
-            return readMirror();
-          })
-          .then(function (hit) {
-            if (hit) return null;
-            return pull().then(function () {
-              return null;
-            });
+            return pull();
           })
           .then(function () {
             state.ready = true;
@@ -752,69 +614,17 @@
           return { anonymous: true };
         }
         state.lastError = err.message || String(err);
-        var localAccount = readLocalAccount();
-        if (isChannelUnavailable(err) && localAccount) {
-          return resumeLocal(localAccount, err);
-        }
         emit();
         return { offline: true };
-      });
-  }
-
-  /* 通道不可用但有本机账号：直接回到本机加密档案，不做任何假装成云端的展示。 */
-  function resumeLocal(account, cause) {
-    state.mode = "local";
-    state.user = { email: account.email, display_name: account.display_name || "" };
-    state.kdfSalt = account.kdf_salt;
-    state.lastError = "本机账户模式：云端账号通道不可用（" + ((cause && (cause.message || cause)) || "未说明原因") + "），已用本机加密档案继续。";
-    var raw = nativeGet.call(window.localStorage, LOCAL_DEVICE_KEY);
-    if (!raw) {
-      emit();
-      return Promise.resolve({ locked: true });
-    }
-    return importRawKey(raw)
-      .then(function (key) {
-        state.key = key;
-        return readVault();
-      })
-      .then(function () {
-        state.ready = true;
-        emit();
-        return { locked: false };
-      })
-      .catch(function () {
-        state.key = null;
-        emit();
-        return { locked: true };
       });
   }
 
   /* 会话在、口令不在：让用户输入一次口令解锁（端侧加密的正常代价）。 */
   function unlock(password) {
     if (!state.user) return Promise.reject(new Error("尚未登录。"));
-    if (state.mode === "local") {
-      var account = readLocalAccount();
-      if (!account) return Promise.reject(new Error("本机账号信息已丢失，请在本机重新注册。"));
-      return loginLocal(account.email, password, true, null)
-        .then(function () {
-          state.ready = true;
-          state.lastError = "本机账户模式：家庭档案已用本机口令解密（数据只在这台设备上）。";
-          emit();
-          return snapshot();
-        })
-        .catch(function (err) {
-          state.lastError = err.message || String(err);
-          emit();
-          throw err;
-        });
-    }
     return deriveContentKey(password, state.kdfSalt)
       .then(function (key) {
         state.key = key;
-        return readMirror();
-      })
-      .then(function (hit) {
-        if (hit) return null;
         return pull();
       })
       .then(function () {
@@ -834,26 +644,20 @@
   }
 
   function resetCloud() {
-    if (state.mode === "local") {
+    return api("/api/family/profile", {
+      method: "DELETE",
+      body: { expected_revision: state.revision },
+    }).then(function () {
+      state.revision = 0;
+      state.cachedText = null;
+      state.cachedAccount = null;
+      state.lastSyncedAt = nowStamp();
+      state.pendingVersion += 1;
       try {
-        nativeRemove.call(window.localStorage, LOCAL_VAULT_KEY);
         nativeRemove.call(window.localStorage, MIRROR_KEY);
       } catch (ignored) {
-        /* 删不掉不影响「已清空」的语义 */
+        /* 清理失败不改变云端删除已成功的事实 */
       }
-      state.revision = 0;
-      state.cachedText = null;
-      state.cachedAccount = null;
-      state.lastSyncedAt = nowStamp();
-      emit();
-      return Promise.resolve();
-    }
-    return api("/api/family/profile", { method: "DELETE" }).then(function () {
-      state.revision = 0;
-      state.cachedText = null;
-      state.cachedAccount = null;
-      state.lastSyncedAt = nowStamp();
-      writeMirror();
       emit();
     });
   }
@@ -877,35 +681,6 @@
     api: api,
     mode: function () {
       return state.mode;
-    },
-    localAccount: function () {
-      var account = readLocalAccount();
-      if (!account) return null;
-      return { email: account.email, display_name: account.display_name || "", created_at: account.created_at || "" };
-    },
-    registerLocal: function (email, password, displayName, remember) {
-      return registerLocal(email, password, displayName, remember, null).then(function () {
-        state.ready = true;
-        emit();
-        return snapshot();
-      });
-    },
-    loginLocal: function (email, password, remember) {
-      return loginLocal(email, password, remember, null).then(function () {
-        state.ready = true;
-        emit();
-        return snapshot();
-      });
-    },
-    forgetLocalAccount: function () {
-      clearLocalAccount();
-      try {
-        nativeRemove.call(window.localStorage, LOCAL_DEVICE_KEY);
-        nativeRemove.call(window.localStorage, LOCAL_VAULT_KEY);
-      } catch (ignored) {
-        /* 清不掉不影响账号已经移除 */
-      }
-      lock();
     },
     setApiBase: function (base) {
       API_BASE = String(base || "").replace(/\/+$/, "");

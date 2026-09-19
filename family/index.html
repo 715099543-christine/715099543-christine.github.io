@@ -1886,13 +1886,28 @@
     <div class="hero-actions">
       <button type="button" class="primary" id="hero-establish">建立我的家庭</button>
       <button type="button" class="ghost hidden" id="hero-back">回到我的家庭档案</button>
-      <button type="button" class="ghost" id="hero-demo">先看示范家庭</button>
     </div>
   </div>
   <div class="hero-account" id="hero-account">
     <div class="k" id="hero-account-kind">本机账户</div>
     <div class="v" id="hero-account-name">尚未注册</div>
     <div class="h" id="hero-account-meta">正在确认账户与档案的保存位置…</div>
+  </div>
+</section>
+
+<section class="card" id="profile-modules" aria-labelledby="profile-modules-title">
+  <h2 id="profile-modules-title">家庭档案入口</h2>
+  <div class="sub">以下入口均打开真实表单；同一账户的数据加密同步到云端。</div>
+  <div class="module-entry-grid">
+    <button type="button" class="module-entry" data-profile-step="1">成员</button>
+    <button type="button" class="module-entry" data-profile-step="2">收支</button>
+    <button type="button" class="module-entry" data-profile-step="3">资产</button>
+    <button type="button" class="module-entry" data-profile-step="4">负债</button>
+    <button type="button" class="module-entry" data-profile-step="5">保险</button>
+    <button type="button" class="module-entry" data-profile-step="2">教育</button>
+    <button type="button" class="module-entry" data-profile-step="6">法律</button>
+    <button type="button" class="module-entry" data-profile-step="6">税务</button>
+    <button type="button" class="module-entry" data-profile-step="8">风险目标</button>
   </div>
 </section>
 
@@ -1999,7 +2014,7 @@
       <button type="button" class="ghost" id="pf-save-as">另存为新档案</button>
       <button type="button" class="ghost" id="pf-export">导出当前档案</button>
       <button type="button" class="ghost" id="pf-import">导入档案文件</button>
-      <button type="button" class="ghost" id="pf-clear-all">清空已保存档案</button>
+      <button type="button" class="ghost" id="pf-clear-all">删除已保存档案</button>
       <button type="button" class="ghost hidden" id="pf-undo">撤销删除</button>
       <input type="file" id="pf-file" accept="application/json,.json" class="hidden" aria-hidden="true" />
     </div>
@@ -2029,7 +2044,6 @@
     </ol>
 
     <div class="wiz-toolbar">
-      <button type="button" class="ghost" id="w-demo">载入完全记录示范家庭</button>
       <button type="button" class="ghost" id="w-clear">清空重填</button>
       <span class="pill info" id="w-progress">第 1 / 8 步</span>
     </div>
@@ -2038,7 +2052,7 @@
     <div class="wiz-step" data-step="1">
       <h3>① 家庭成员</h3>
       <div class="grid c2">
-        <div class="field"><label for="w-profile-id">家庭档案名称</label><input id="w-profile-id" value="MY-FAMILY-001" /></div>
+        <div class="field"><label for="w-profile-id">家庭档案名称</label><input id="w-profile-id" placeholder="例如：陈家 2026" /></div>
         <div class="field"><label for="w-currency">记账币种</label>
           <select id="w-currency">
             <option value="CNY">人民币 CNY</option>
@@ -2056,8 +2070,8 @@
     <div class="wiz-step hidden" data-step="2">
       <h3>② 收入与支出</h3>
       <div class="grid c2">
-        <div class="field"><label for="w-essential">家庭年必要支出</label><input id="w-essential" type="number" min="0" step="1000" value="240000" /><div class="fhint">房租/房贷以外的生活刚需：吃住行、教育、医疗、赡养</div></div>
-        <div class="field"><label for="w-discretionary">家庭年可选支出</label><input id="w-discretionary" type="number" min="0" step="1000" value="60000" /><div class="fhint">旅行、娱乐等可压缩支出</div></div>
+        <div class="field"><label for="w-essential">家庭年必要支出</label><input id="w-essential" type="number" min="0" step="1000" placeholder="请按真实情况填写" /><div class="fhint">房租/房贷以外的生活刚需：吃住行、教育、医疗、赡养</div></div>
+        <div class="field"><label for="w-discretionary">家庭年可选支出</label><input id="w-discretionary" type="number" min="0" step="1000" placeholder="请按真实情况填写" /><div class="fhint">旅行、娱乐等可压缩支出</div></div>
       </div>
       <h3 class="mt">未来刚性支出（一次性大额责任）</h3>
       <div id="w-outflows"></div>
@@ -2085,11 +2099,18 @@
       <div id="w-protection"></div>
     </div>
 
-    <!-- 6 法律 -->
+    <!-- 6 法律与税务 -->
     <div class="wiz-step hidden" data-step="6">
-      <h3>⑥ 法律安排</h3>
+      <h3>⑥ 法律与税务安排</h3>
       <p class="fhint">未勾选＝未记录。未记录的领域会进入综合保护方案的风险列表。</p>
       <div id="w-legal"></div>
+      <h3 class="mt">税务资料</h3>
+      <div class="grid c2" id="w-tax">
+        <div class="field"><label for="w-tax-residency">主要税务居民地</label><input id="w-tax-residency" type="text" placeholder="例如：中国香港；不确定请填写待确认" /></div>
+        <div class="field"><label for="w-tax-year">当前税务年度</label><input id="w-tax-year" type="text" placeholder="例如：2026/27" /></div>
+        <div class="field"><label for="w-tax-payable">预计年度税款</label><input id="w-tax-payable" type="number" min="0" step="1000" placeholder="请按报税资料填写" /></div>
+        <div class="field"><label for="w-tax-note">税务事项备注</label><input id="w-tax-note" type="text" placeholder="扣除、跨境收入或待咨询事项" /></div>
+      </div>
     </div>
 
     <!-- 7 社保 -->
@@ -2102,9 +2123,9 @@
     <div class="wiz-step hidden" data-step="8">
       <h3>⑧ 投资目标与风险承受力</h3>
       <div class="grid c3">
-        <div class="field"><label for="w-horizon">投资期限（年）</label><input id="w-horizon" type="number" min="1" max="60" step="1" value="15" /></div>
-        <div class="field"><label for="w-target">目标年化回报（0–1）</label><input id="w-target" type="number" min="0" max="1" step="0.005" value="0.06" /></div>
-        <div class="field"><label for="w-tolerance">可承受最大损失（0–1）</label><input id="w-tolerance" type="number" min="0" max="1" step="0.01" value="0.25" /></div>
+        <div class="field"><label for="w-horizon">投资期限（年）</label><input id="w-horizon" type="number" min="1" max="60" step="1" placeholder="请按真实目标填写" /></div>
+        <div class="field"><label for="w-target">目标年化回报（0–1）</label><input id="w-target" type="number" min="0" max="1" step="0.005" placeholder="例如 0.06" /></div>
+        <div class="field"><label for="w-tolerance">可承受最大损失（0–1）</label><input id="w-tolerance" type="number" min="0" max="1" step="0.01" placeholder="例如 0.25" /></div>
       </div>
       <div class="grid c2" style="margin-top:10px">
         <div class="field"><label for="w-annual-gain">本年度已实现净收益（可选）</label><input id="w-annual-gain" type="number" step="1000" value="" placeholder="例如 118000，留空＝未记录" /></div>

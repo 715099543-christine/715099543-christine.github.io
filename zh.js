@@ -231,9 +231,10 @@ async function detectChannel() {
 }
 
 /* 档案动作文案的措辞必须跟着真实存储模式走。
-   Round 48 P0（实测复现）：云端账号下，同一屏同时出现「我的家庭档案（端到端加密云端保存）」
-   与「已清空本机档案」/「清空本机档案」按钮，用户无法判断数据在哪、删掉的是哪一份 ——
-   这正是「仅保存于本机」与「已保存到云端」互相矛盾的老问题换了个位置。 */
+   Round 48 P0（正式域名实测复现）：云端账号下，同一屏同时出现「我的家庭档案（端到端加密
+   云端保存）」与「清空本机档案」按钮、以及「已更新「…」到本机」的提示 —— 用户无法判断
+   数据到底在哪、删掉的是哪一份。（Round 48 合并时云端已改为权威通道，本函数保证
+   「文案跟随真实模式」这件事仍然成立，而不是把「云端」再写死一遍。） */
 function storageWord() {
   const familyStore = window.VerityFamilyStore;
   const mode = familyStore && typeof familyStore.mode === "function" ? familyStore.mode() : "local";
@@ -241,14 +242,15 @@ function storageWord() {
   return {
     cloud: cloud,
     place: cloud ? "云端账号" : "本机",
+    short: cloud ? "云端" : "本机",
     toPlace: cloud ? "到你的云端账号" : "到本机",
     fromPlace: cloud ? "从云端账号" : "从本机",
-    empty: cloud ? "这个账号还没有已保存档案。" : "本机还没有已保存档案。",
+    empty: cloud ? "云端还没有已保存档案。" : "本机还没有已保存档案。",
     limit: (limit) => `${cloud ? "这个账号" : "本机"}最多保存 ${limit} 份档案，请先删除不再需要的档案。`,
-    clearLabel: cloud ? "清空账号档案" : "清空本机档案",
+    clearLabel: cloud ? "删除云端档案" : "删除本机档案",
     clearConfirm: (count) =>
       cloud
-        ? `清空账号里全部 ${count} 份档案？同一账号在其他设备上也会一起消失。（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`
+        ? `删除云端账号里全部 ${count} 份档案？同一账号在其他设备上也会一起消失。（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`
         : `清空本机全部 ${count} 份档案？（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`,
   };
 }
@@ -277,7 +279,7 @@ function renderArchiveChannelNotice() {
   if (countHint) countHint.textContent = cloud ? "当前账号的档案" : "本机浏览器存储";
   if (bytesHint) bytesHint.textContent = cloud ? "解密后档案约值" : "本机存储约值";
   if (lastHint) lastHint.textContent = cloud ? "登录后自动恢复" : "下次打开自动恢复";
-  /* 按钮与说明文字同样必须跟着模式走：静态写死的「清空本机档案」在云端账号下是假信息。 */
+  /* 按钮与说明文字同样必须跟着模式走：静态写死的「删除云端档案」在没有云端通道时是假信息。 */
   const word = storageWord();
   const clearButton = $("pf-clear-all");
   if (clearButton) clearButton.textContent = word.clearLabel;
@@ -1037,6 +1039,13 @@ function collectProfile() {
     };
   });
 
+  const tax_affairs = {
+    residency: $("w-tax-residency").value.trim(),
+    tax_year: $("w-tax-year").value.trim(),
+    estimated_payable: $("w-tax-payable").value.trim() === "" ? null : num($("w-tax-payable").value),
+    note: $("w-tax-note").value.trim(),
+  };
+
   /* 本年度已实现净收益（可选，T-E0-044）。留空 = 未记录：引擎不会替你假设赚了多少，
      页面与报告会如实写「进度未记录」。填了数字就按记录读取，不做任何推算。 */
   const annualGoal = {};
@@ -1049,7 +1058,7 @@ function collectProfile() {
   if (annualAsOf) annualGoal.recorded_as_of = annualAsOf;
 
   return {
-    profile_id: $("w-profile-id").value || "MY-FAMILY-001",
+    profile_id: $("w-profile-id").value.trim(),
     currency: currency,
     members: members,
     annual_expenses_essential: num($("w-essential").value),
@@ -1059,6 +1068,7 @@ function collectProfile() {
     protection: protection,
     future_rigid_outflows: futureRigidOutflows,
     legal_affairs: legal_affairs,
+    tax_affairs: tax_affairs,
     social_protection: social_protection,
     investment_horizon_years: num($("w-horizon").value),
     target_annual_return: num($("w-target").value),
@@ -1069,6 +1079,7 @@ function collectProfile() {
 
 /* -------------------------------------------------------------- 前端必填校验 */
 const FIELD_CN = {
+  profile_id: "家庭档案名称",
   members: "家庭成员",
   annual_expenses_essential: "家庭年必要支出",
   assets: "家庭资产",
@@ -1082,6 +1093,7 @@ function validate() {
   const missing = [];
   const problems = [];
 
+  if (!profile.profile_id) missing.push("profile_id");
   if (!profile.members.length || !profile.members.some((m) => m.age > 0)) missing.push("members");
   if (!(profile.annual_expenses_essential > 0)) missing.push("annual_expenses_essential");
   if (!profile.assets.length) missing.push("assets");
@@ -2264,22 +2276,6 @@ async function downloadReportHtml() {
   }
 }
 
-let demoProfile = null;
-
-async function loadZhDemoFamily() {
-  if (demoProfile) return demoProfile;
-  /* 控制台同时被官网根目录与 /family/ 子路径引用：示范档案必须按运行时基址解析，
-     否则在 /family/ 下会 404，八步向导拿不到预填输入、走不到结果页。 */
-  const demoUrl = new URL(
-    `${window.VERITY_RUNTIME_BASE || ""}zh-demo-family.json`,
-    document.baseURI
-  ).href;
-  const res = await fetch(demoUrl, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`示范家庭档案不可用（HTTP ${res.status}）`);
-  demoProfile = await res.json();
-  return demoProfile;
-}
-
 function fillProfile(profile) {
   $("w-profile-id").value = profile.profile_id;
   $("w-currency").value = profile.currency || "CNY";
@@ -2319,6 +2315,11 @@ function fillProfile(profile) {
     $(`w-social-${kind}`).checked = Boolean(item.recorded);
     $(`w-social-${kind}-note`).value = item.note || "";
   });
+  const taxAffairs = profile.tax_affairs || {};
+  $("w-tax-residency").value = taxAffairs.residency || "";
+  $("w-tax-year").value = taxAffairs.tax_year || "";
+  $("w-tax-payable").value = taxAffairs.estimated_payable === null || taxAffairs.estimated_payable === undefined ? "" : taxAffairs.estimated_payable;
+  $("w-tax-note").value = taxAffairs.note || "";
   $("w-horizon").value = profile.investment_horizon_years;
   $("w-target").value = profile.target_annual_return;
   $("w-tolerance").value = profile.max_tolerable_loss_pct;
@@ -2332,10 +2333,10 @@ function fillProfile(profile) {
 }
 
 function clearWizard() {
-  $("w-profile-id").value = "MY-FAMILY-001";
+  $("w-profile-id").value = "";
   $("w-currency").value = "CNY";
   $("w-members").innerHTML = "";
-  addMember({ age: 35, annual_income: 300000, income_stability: "high", dependents: 0 });
+  addMember({ age: "", annual_income: "", income_stability: "medium", dependents: 0 });
   $("w-essential").value = 0;
   $("w-discretionary").value = 0;
   $("w-outflows").innerHTML = "";
@@ -2359,9 +2360,13 @@ function clearWizard() {
     $(`w-social-${kind}`).checked = false;
     $(`w-social-${kind}-note`).value = "";
   });
-  $("w-horizon").value = 15;
-  $("w-target").value = 0.06;
-  $("w-tolerance").value = 0.25;
+  $("w-tax-residency").value = "";
+  $("w-tax-year").value = "";
+  $("w-tax-payable").value = "";
+  $("w-tax-note").value = "";
+  $("w-horizon").value = "";
+  $("w-target").value = "";
+  $("w-tolerance").value = "";
   $("w-annual-gain").value = "";
   $("w-annual-asof").value = "";
   validate();
@@ -2532,9 +2537,9 @@ function setMsg(text, kind) {
 }
 
 /* ------------------------------------------------- 删除的可控恢复（第九条·8）
-   「删除数据必须有二次确认和可控恢复机制」：单条删除与清空都进撤销缓冲，用户当场一键恢复。
-   缓冲只活在当前页面会话内（不写进 localStorage / IndexedDB），因此云端模式下也不会在设备上
-   留下第二份明文家庭数据；离开页面后缓冲消失，此时界面已如实说明「不可撤销」。 */
+   「删除数据必须有二次确认和可控恢复机制」：单条删除与整库清空都进撤销缓冲，用户当场一键恢复。
+   缓冲只活在当前页面会话内（不写 localStorage / IndexedDB / Cache），因此不会在设备上留下
+   第二份家庭数据；离开页面后缓冲消失，此时界面已如实说明「不可撤销」。 */
 let undoBuffer = null;
 
 function renderUndo() {
@@ -2685,7 +2690,21 @@ function commitStore(name, verb) {
   renderProfileList();
   renderHome();
   renderHomeDashboard();
-  setMsg(`已${verb}「${name}」${storageWord().toPlace}。下次打开本页面会自动恢复这份档案的输入。`, "ok");
+  const word = storageWord();
+  const cloudStore = window.VerityFamilyStore;
+  if (cloudStore && typeof cloudStore.flush === "function") {
+    cloudStore.flush().then(() => {
+      const snapshot = cloudStore.snapshot();
+      setMsg(
+        snapshot.lastError
+          ? `「${name}」已写入加密待同步草稿，${word.short}尚未确认：${snapshot.lastError}`
+          : `已${verb}「${name}」并确认保存${word.toPlace}。`,
+        snapshot.lastError ? "warn" : "ok"
+      );
+    });
+  } else {
+    setMsg(`「${name}」仅处于当前会话，${word.short}存储通道不可用。`, "warn");
+  }
   markSavedSnapshot();
   return true;
 }
@@ -2787,19 +2806,33 @@ function deleteProfile(id) {
   const word = storageWord();
   if (
     !window.confirm(
-      `删除${word.place}上的档案「${item.name}」？该档案的输入、上次运行摘要与结果快照都会被移除。（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`
+      `删除${word.short}档案「${item.name}」？该档案的输入、上次运行摘要与结果快照都会被移除。（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`
     )
   )
     return;
   storeState.profiles = storeState.profiles.filter((entry) => entry.id !== id);
   if (currentProfileId === id) currentProfileId = "";
   if (storeState.last_opened === id) storeState.last_opened = "";
+  /* 删除必须有可控恢复机制（第九条·8）：先入撤销缓冲，再落盘。 */
   rememberDeleted([item]);
   writeStore();
   renderProfileList();
   renderHome();
   renderHomeDashboard();
-  setMsg(`已${word.fromPlace}删除「${item.name}」。误删可点「撤销删除」恢复。`, "ok");
+  const cloud = window.VerityFamilyStore;
+  if (cloud && typeof cloud.flush === "function") {
+    cloud.flush().then(() => {
+      const snapshot = cloud.snapshot();
+      setMsg(
+        snapshot.lastError
+          ? `删除尚未同步：${snapshot.lastError}（仍可在本页点「撤销删除」恢复）`
+          : `已${word.fromPlace}删除「${item.name}」。误删可点「撤销删除」恢复。`,
+        snapshot.lastError ? "warn" : "ok"
+      );
+    });
+  } else {
+    setMsg(`无法确认已${word.fromPlace}删除「${item.name}」。误删可点「撤销删除」恢复。`, "warn");
+  }
 }
 
 function exportCurrentProfile() {
@@ -2965,11 +2998,11 @@ function purgeLocalArchiveData() {
 function clearAllProfiles() {
   const word = storageWord();
   if (!storeState.profiles.length) {
-    setMsg(word.cloud ? "这个账号还没有已保存档案。" : "本机没有已保存档案。", "");
+    setMsg(word.empty, "");
     return;
   }
   if (!window.confirm(word.clearConfirm(storeState.profiles.length))) return;
-  /* 删除必须有可控恢复机制（第九条·8）：清空与单条删除都先进撤销缓冲，用户当场可恢复。
+  /* 删除必须有可控恢复机制（第九条·8）：全部档案先进撤销缓冲，用户当场可恢复。
      缓冲只活在当前页面会话内、不落盘，因此不会在设备上留下第二份家庭数据。 */
   const removedEntries = storeState.profiles.slice();
   storeState = emptyStore();
@@ -2980,10 +3013,21 @@ function clearAllProfiles() {
   accountState = null;
   renderHome();
   renderHomeDashboard();
-  setMsg(
-    `已清空${word.place}的 ${removedEntries.length} 份档案（含 ${removed} 项${word.cloud ? "本机缓存" : "本机数据"}，包括此前隔离出来的损坏副本）。点「撤销删除」可以恢复；当前页面上的输入仍在，可重新保存。`,
-    "ok"
-  );
+  const cloud = window.VerityFamilyStore;
+  const tail = `点「撤销删除」可以恢复；当前页面上的输入仍在，可重新保存。`;
+  if (cloud && typeof cloud.resetCloud === "function") {
+    cloud.resetCloud().then(() => {
+      const state = cloud.snapshot();
+      setMsg(
+        state.lastError
+          ? `${word.short}删除未确认：${state.lastError}（${tail}）`
+          : `已删除${word.short}账号里的 ${removedEntries.length} 份档案，并清理 ${removed} 项本机临时数据。${tail}`,
+        state.lastError ? "warn" : "ok"
+      );
+    });
+  } else {
+    setMsg(`无法确认${word.short}档案已删除。${tail}`, "warn");
+  }
 }
 
 /* 打开页面时恢复上次档案的输入（只恢复输入；引擎必须由用户当场重新运行）。 */
@@ -4332,15 +4376,6 @@ function bind() {
     $("w-outflows").appendChild(outflowRow({ years_until_due: 5 }));
     validate();
   });
-  $("w-demo").addEventListener("click", async () => {
-    try {
-      fillProfile(await loadZhDemoFamily());
-      showStep(1);
-      $("w-error").textContent = "";
-    } catch (err) {
-      $("w-error").textContent = `载入示范家庭失败：${err.message || err}`;
-    }
-  });
   $("w-clear").addEventListener("click", () => {
     markSavedSnapshot();
     detachCurrentProfile();
@@ -4356,9 +4391,10 @@ function bind() {
     event.target.value = "";
   });
   $("pf-clear-all").addEventListener("click", clearAllProfiles);
-  $("pf-undo").addEventListener("click", undoDelete);
+  const undoButton = $("pf-undo");
+  if (undoButton) undoButton.addEventListener("click", undoDelete);
   renderUndo();
-  /* 未保存输入的离开拦截：只在真的有改动时生效，且不阻止用户在已保存后正常离开。 */
+  /* 未保存输入的离开拦截：只在真的有改动时生效，保存后正常离开不受影响。 */
   window.addEventListener("beforeunload", (event) => {
     if (!hasUnsavedChanges()) return;
     event.preventDefault();
@@ -4408,6 +4444,12 @@ function bind() {
       showStep(destination);
     });
   });
+  document.querySelectorAll("[data-profile-step]").forEach((button) => {
+    button.addEventListener("click", () => {
+      showStep(Number(button.dataset.profileStep));
+      $("wizard").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
   $("w-run").addEventListener("click", run);
   $("r-snapshot-rerun").addEventListener("click", () => {
     showStep(STEPS);
@@ -4438,19 +4480,6 @@ function bind() {
   if (heroBack) {
     heroBack.addEventListener("click", () => {
       landTo("#profiles");
-    });
-  }
-  const heroDemo = $("hero-demo");
-  if (heroDemo) {
-    heroDemo.addEventListener("click", async () => {
-      try {
-        fillProfile(await loadZhDemoFamily());
-        showStep(1);
-        $("w-error").textContent = "";
-        landTo("#wizard");
-      } catch (err) {
-        $("w-error").textContent = `载入示范家庭失败：${err.message || err}`;
-      }
     });
   }
   const homeRun = $("home-run");
@@ -4732,8 +4761,8 @@ function boot() {
   if (loaded.error) setMsg(loaded.error, "warn");
   renderProfileList();
   bindStorageCopyRefresh();
-  addMember({ age: 35, annual_income: 300000, income_stability: "high", dependents: 0 });
-  /* 启动时就确立「干净基线」：只有启动之后被改动的输入才算未保存。 */
+  addMember({ age: "", annual_income: "", income_stability: "medium", dependents: 0 });
+  /* 启动时确立「干净基线」：只有启动之后被改动的输入才算未保存。 */
   markSavedSnapshot();
   bind();
   bindSectionNav();

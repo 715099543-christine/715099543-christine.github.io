@@ -451,8 +451,15 @@ section[id], #results { scroll-margin-top: calc(var(--sticky-header-h) + 16px); 
 .home-head h2 { margin: 6px 0 0; }
 .home-cta { margin-top: 4px; }
 .home-grid { margin-top: 14px; }
-.home-mod { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.02); }
+.home-mod { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.02); cursor: pointer; }
+.home-mod:hover, .home-mod:focus-visible { border-color: var(--accent); outline: none; }
 .home-mod .v { font-size: clamp(19px, 4.4vw, 26px); }
+.module-entry-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.module-entry { flex: 1 1 calc(33.333% - 10px); min-height: 48px; font-weight: 700; }
+body > .hero,
+body > #profile-modules,
+body > #home-dashboard,
+body > #home-notice { width: min(1240px, calc(100% - 44px)); margin-left: auto; margin-right: auto; }
 .home-block { margin-top: 22px; }
 .home-block h3 { margin: 0 0 4px; font-size: 16px; }
 .home-three { margin: 12px 0 0; padding-left: 0; list-style: none; display: grid; gap: 10px; }
@@ -479,6 +486,11 @@ section[id], #results { scroll-margin-top: calc(var(--sticky-header-h) + 16px); 
   .hero-promise { display: block; color: var(--muted); font-size: 12px; margin: 8px 0 0; }
   .hero-actions button { flex: 1 1 100%; }
   .home-three li { padding: 11px 12px; }
+  .module-entry { flex-basis: calc(50% - 10px); }
+  body > .hero,
+  body > #profile-modules,
+  body > #home-dashboard,
+  body > #home-notice { width: calc(100% - 24px); }
 }
 
 /* Round 29：运行失败时首页状态行要能一眼看出是失败，而不是一句普通说明。

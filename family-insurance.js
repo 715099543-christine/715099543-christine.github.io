@@ -650,7 +650,9 @@
       })
       .then(function (catalog) {
         state.catalog = catalog;
-        state.error = "";
+        state.error = catalog && catalog.release_eligible === true
+          ? ""
+          : "香港保险产品目录尚未完成真实性、有效期与合规性复核，当前停止产品匹配和排序。";
         render(container);
       })
       .catch(function (err) {
