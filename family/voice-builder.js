@@ -31,6 +31,7 @@
     busy: false,
     pendingName: null,    /* 等待用户确认档案名称 {next, proposed} */
     pendingRun: false,    /* 说过「运行家庭分析」——缺项补齐后自动运行（Round 55） */
+    interviewStarted: false, /* 建档问答是否已开始（Round 57） */
   };
 
   function bot(text) { appendLine("bot", text); }
@@ -114,6 +115,7 @@
   }
 
   function askNext() {
+    state.interviewStarted = true;
     var q = NLU.nextQuestion(state.draft, state.asked);
     if (!q) {
       bot("该问的都问完了。你可以说「保存退出」把档案存到云端，或者说「运行家庭分析」出结果。");
@@ -144,6 +146,7 @@
   };
 
   function welcome() {
+    state.interviewStarted = true;
     bot("你好，我是 Verity 语音建档助手。你像聊天一样告诉我家里的情况就行。先从第一个问题开始。");
     askNext();
   }
@@ -703,7 +706,10 @@
           panel.classList.remove("hidden");
           panel.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-        if (!state.history.length) { state.draft = freshDraft(); welcome(); }
+        /* Round 57：无语音识别环境下点击麦克风会写入一条引导气泡到 history，
+           旧写法用 history.length 判定「是否已开始建档」，会让随后的开始按钮
+           变成点不动的假按钮（问答不启动）。改判「问答是否真的开始过」。 */
+        if (!state.interviewStarted) { state.draft = freshDraft(); welcome(); }
       });
     });
 
