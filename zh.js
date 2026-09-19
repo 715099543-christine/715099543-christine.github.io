@@ -2738,11 +2738,11 @@ function commitStore(name, verb) {
 /* 「保存当前档案」：开着哪份就更新哪份；没有打开的档案时新建一份。 */
 async function saveCurrentProfile() {
   const fs = window.VerityFamilyStore;
+  const fsSnap = fs && typeof fs.snapshot === "function" ? fs.snapshot() : null;
   const cloudReady = !!(
-    fs &&
-    typeof fs.mode === "function" &&
-    fs.mode() === "cloud" &&
-    fs.ready
+    fsSnap &&
+    fsSnap.mode === "cloud" &&
+    fsSnap.ready === true
   );
   if (!cloudReady) {
     setMsg(
@@ -2788,11 +2788,11 @@ async function saveCurrentProfile() {
 /* 「另存为新档案」：无论当前开着哪份，都新建一份，原来的档案保持不变。 */
 function saveCurrentProfileAsNew() {
   const fs = window.VerityFamilyStore;
+  const fsSnap = fs && typeof fs.snapshot === "function" ? fs.snapshot() : null;
   const cloudReady = !!(
-    fs &&
-    typeof fs.mode === "function" &&
-    fs.mode() === "cloud" &&
-    fs.ready
+    fsSnap &&
+    fsSnap.mode === "cloud" &&
+    fsSnap.ready === true
   );
   if (!cloudReady) {
     setMsg(
@@ -4525,13 +4525,13 @@ function bind() {
     const btn = $(id);
     if (btn) {
       btn.addEventListener("click", () => {
-        const fs = window.VerityFamilyStore;
+  const fs = window.VerityFamilyStore;
+        const fsSnap = fs && typeof fs.snapshot === "function" ? fs.snapshot() : null;
         const cloudReady = !!(
-          fs &&
-          typeof fs.mode === "function" &&
-          fs.mode() === "cloud" &&
-          fs.ready
-        );
+    fsSnap &&
+    fsSnap.mode === "cloud" &&
+    fsSnap.ready === true
+  );
         if (cloudReady) {
           landTo("#wizard");
           return;

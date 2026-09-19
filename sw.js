@@ -15,8 +15,8 @@
  */
 
 /* 唯一来源 web/version.json；改这里必须同步那里（tests/test_version_sot.py 守住）。 */
-const PRODUCT_VERSION = "e0.27.1";
-const CACHE_SCHEMA = "r49-p0-clean-copy";
+const PRODUCT_VERSION = "e0.27.2";
+const CACHE_SCHEMA = "r49-p0-cloud-save-fix";
 const SHELL_CACHE = `verity-zh-shell-v${PRODUCT_VERSION}-${CACHE_SCHEMA}`;
 
 const SHELL_ASSETS = [
