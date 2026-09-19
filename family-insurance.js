@@ -616,9 +616,18 @@
     });
   }
 
+  /* R46 修复：档案是「建档保存」之后才写入本机的，而本模块可能在保存之前就已挂载。
+     只读一次会让实验室永远停留在「还没有档案」的空态。这里改为信号变化才重渲染：
+     低频轮询 + 跨标签页 storage 事件，检测到档案变化立即刷新分析。 */
+  var _lastProfileSig = "\u0000no-profile";
   function refreshProfile() {
     var profile = loadProfileFromConsole();
+    var sig = profile ? (profile.profile_id || JSON.stringify(profile).length) : "\u0000no-profile";
+    if (sig === _lastProfileSig) return;
+    _lastProfileSig = sig;
     state.analysis = profile ? analyze(profile) : null;
+    var container = document.getElementById("insurance-lab-mount");
+    if (container) render(container);
   }
 
   function mount() {
@@ -626,6 +635,11 @@
     if (!container) return;
     refreshProfile();
     render(container);
+    window.setInterval(refreshProfile, 3000);
+    if (typeof window.addEventListener === "function") {
+      window.addEventListener("storage", refreshProfile);
+      window.addEventListener("verity:profile-saved", refreshProfile);
+    }
     if (state.catalog) return;
     var url = new URL("../hk-insurance-products.json", window.location.href).toString();
     window
