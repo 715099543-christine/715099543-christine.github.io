@@ -1,6 +1,6 @@
 {
   "verity_data_class": "public_catalog",
-  "as_of_date": "2026-09-18",
+  "as_of_date": "2026-09-19",
   "verification_note": "本目录只收录可从公开官方页面核验的香港市场保障型产品。凡在公开页面无法核验的具体保费与保额一律为 null，标注「需向承保方索取正式报价」；任何条目均不含佣金、返佣或销售激励字段，排序也绝不使用这类字段。",
   "disclaimer": "Verity 不是持牌保险经纪，不销售任何保险产品，不推荐任何保险公司。本目录只用于按保障缺口做单位成本比较；最终投保须以承保方正式条款、核保结果与报价为准。",
   "products": [
@@ -35,7 +35,7 @@
       "key_limits": "保费回赠为限时推广，非长期保证；转换权有年龄与期限限制",
       "notes": "具体保额与保费需向承保方索取正式报价",
       "source_url": "https://www.aia.com.hk/zh-hk/products/life/wisdom-term",
-      "last_verified": "2026-09-18"
+      "last_verified": "2026-09-19"
     },
     {
       "id": "hk-term-manulife-pure",
@@ -44,17 +44,17 @@
         "death"
       ],
       "insurer": "宏利人壽保險（國際）有限公司",
-      "product_name": "宏利純人壽（定期壽險）",
+      "product_name": "精選定期壽險",
       "currency": "HKD",
       "premium_basis": "按投保年龄、性别、保障额与年期定价；公开页面未列具体保费",
       "premium_hkd_per_year": null,
       "sum_assured_hkd": null,
       "entry_age_range": "以承保方最新条款为准",
-      "term": "定期寿险，可选年期以承保方条款为准",
+      "term": "保障至 75 岁；首 10 年或 20 年保费不变",
       "coverage_highlights": [
-        "纯身故保障，不含储蓄成分",
-        "相对低保费取得较高身故保障",
-        "可作为家庭责任期的过渡保障"
+        "人寿保障",
+        "首 10 年或 20 年保费不变",
+        "保证保障至 75 岁"
       ],
       "exclusions": [
         "常见除外：既有病症未申报、战争与非法活动（以正式条款为准）"
@@ -65,7 +65,7 @@
       "key_limits": "定期寿险到期不保证续保，保费随年龄重定价",
       "notes": "具体保额与保费需向承保方索取正式报价",
       "source_url": "https://www.manulife.com.hk/zh-hk/individual/products/life/life-protection.html",
-      "last_verified": "2026-09-18"
+      "last_verified": "2026-09-19"
     },
     {
       "id": "hk-life-manulife-wholelife",
@@ -75,7 +75,7 @@
         "cash_value"
       ],
       "insurer": "宏利人壽保險（國際）有限公司",
-      "product_name": "終身壽險計劃（含儲蓄成分）",
+      "product_name": "優越終身保",
       "currency": "HKD",
       "premium_basis": "按投保年龄、性别、保障额与缴费期定价；公开页面未列具体保费",
       "premium_hkd_per_year": null,
@@ -83,9 +83,10 @@
       "entry_age_range": "以承保方最新条款为准",
       "term": "终身（含储蓄／现金价值成分）",
       "coverage_highlights": [
-        "终身身故保障",
-        "保单现金价值可作长期储蓄",
-        "可附加危疾、住院等附加契约"
+        "终身人寿保障",
+        "终期红利锁定权益",
+        "通胀加保权益",
+        "可额外增添附加保障"
       ],
       "exclusions": [
         "储蓄成分的红利部分非保证",
@@ -97,7 +98,7 @@
       "key_limits": "保费显著高于定期寿险；保证现金价值与预期红利不同，早期退保可能大幅亏损",
       "notes": "是否值得用终身寿险承担保障责任，取决于家庭长期资金与现金流；具体保费需正式报价",
       "source_url": "https://www.manulife.com.hk/zh-hk/individual/products/life/life-protection.html",
-      "last_verified": "2026-09-18"
+      "last_verified": "2026-09-19"
     },
     {
       "id": "hk-ci-prudential-firstprotect2",
