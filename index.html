@@ -1234,7 +1234,7 @@
   "x-verity": {
     "api_version": "v0",
     "api_contract_version": "0.2.0",
-    "product_version": "e0.28.0",
+    "product_version": "e0.29.0",
     "algorithm_version": "e0.4.0",
     "production_authority": "OFF",
     "release_gate": "DENY",
@@ -1759,8 +1759,8 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="styles.e0.28.0.css" />
-<link rel="stylesheet" href="zh.e0.28.0.css" />
+<link rel="stylesheet" href="styles.e0.29.0.css" />
+<link rel="stylesheet" href="zh.e0.29.0.css" />
 </head>
 <body>
 
@@ -1783,7 +1783,8 @@
     <a href="#home-dashboard">我的家庭总览</a>
     <a href="#profiles">我的家庭档案</a>
     <a href="#engine-strip">引擎准备状态</a>
-    <a href="#wizard">建立家庭档案</a>
+    <a href="#voice-builder">语音建立家庭档案</a>
+    <a href="#wizard">建立家庭档案（表格）</a>
     <a href="#r-verdict">判定与今日行动</a>
     <a href="#r-balance">现金流与资产负债</a>
     <a href="#r-trend">月度趋势</a>
@@ -1806,7 +1807,8 @@
     <div class="hero-promise-line">一个APP，管好全家的钱、保障和未来。</div>
     <p class="hero-desc">先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。</p>
     <div class="hero-actions">
-      <button type="button" class="primary" id="hero-establish">建立我的家庭</button>
+      <button type="button" class="primary hero-voice-cta js-voice-start">🎤 开始语音建立家庭档案</button>
+      <button type="button" class="ghost" id="hero-establish">用表格建立我的家庭</button>
       <button type="button" class="ghost hidden" id="hero-back">回到我的家庭档案</button>
     </div>
   </div>
@@ -1815,6 +1817,43 @@
     <div class="v" id="hero-account-name">尚未注册</div>
     <div class="h" id="hero-account-meta">正在确认账户与档案的保存位置…</div>
   </div>
+</section>
+
+<section class="card" id="voice-builder" aria-labelledby="voice-title">
+  <div class="voice-head">
+    <div>
+      <h2 id="voice-title">开始语音建立家庭档案</h2>
+      <p class="sub" id="voice-support-hint">像聊天一样描述家庭情况，系统帮你整理成结构化档案；支持普通话、粤语和文字输入。</p>
+    </div>
+    <div class="voice-lang" role="group" aria-label="识别语言">
+      <button type="button" id="voice-lang-zh" aria-pressed="true">普通话</button>
+      <button type="button" id="voice-lang-hk" aria-pressed="false">粤语</button>
+      <span class="pill info" id="voice-lang-hint">普通话识别</span>
+    </div>
+  </div>
+  <p class="voice-consent">点击麦克风即表示你同意在本次会话使用麦克风进行语音识别；原始录音不会保存，只有你逐项确认后的内容才会写入云端档案。</p>
+  <div class="voice-layout">
+    <div class="voice-chat" id="voice-log" role="log" aria-live="polite" aria-label="语音建档对话"></div>
+    <div class="voice-side">
+      <div class="sub">已了解的家庭情况</div>
+      <div id="voice-summary" class="voice-summary"></div>
+      <div class="sub">对话指令（也可以直接说出来）</div>
+      <div class="voice-command-row">
+        <button type="button" class="voice-cmd" data-voice-cmd="上一题">上一题</button>
+        <button type="button" class="voice-cmd" data-voice-cmd="我说错了">我说错了</button>
+        <button type="button" class="voice-cmd" data-voice-cmd="稍后填写">稍后填写</button>
+        <button type="button" class="voice-cmd" data-voice-cmd="查看摘要">查看摘要</button>
+        <button type="button" class="voice-cmd" data-voice-cmd="保存退出">保存退出</button>
+        <button type="button" class="voice-cmd" data-voice-cmd="运行家庭分析">运行家庭分析</button>
+      </div>
+    </div>
+  </div>
+  <form id="voice-form" class="voice-input-row" autocomplete="off">
+    <button type="button" id="voice-mic" aria-label="开始或停止语音输入" title="点击说话">🎤</button>
+    <input id="voice-input" type="text" placeholder="例如：家里两个大人一个孩子，我月收入三万，存款五十万…" aria-label="语音建档文字输入" />
+    <button type="submit" class="primary">发送</button>
+  </form>
+  <div id="voice-status" class="voice-status" role="status" aria-live="polite"></div>
 </section>
 
 <section class="card" id="profile-modules" aria-labelledby="profile-modules-title">
@@ -1846,7 +1885,8 @@
       <div class="sub" id="home-status">注册并运行一次引擎后，这里会展示你家庭的 8 项核心情况。</div>
     </div>
     <div class="wiz-toolbar home-cta">
-      <button type="button" id="home-establish" class="primary">建立我的家庭</button>
+      <button type="button" class="primary js-voice-start">🎤 语音建立档案</button>
+      <button type="button" id="home-establish" class="ghost">建立我的家庭（表格）</button>
       <button type="button" class="ghost" id="home-run">运行 Verity 引擎</button>
     </div>
   </div>
@@ -2277,7 +2317,9 @@
   <a href="/privacy.html">隐私政策</a> · <a href="/terms.html">使用条款与风险声明</a> · <a href="/check/">投资核查工具</a>
 </footer>
 
-<script src="verity-digest.e0.28.0.js"></script>
-<script src="zh.e0.28.0.js"></script>
+<script src="verity-digest.e0.29.0.js"></script>
+<script src="zh.e0.29.0.js"></script>
+<script src="voice-nlu.e0.29.0.js"></script>
+<script src="family/voice-builder.e0.29.0.js"></script>
 </body>
 </html>
