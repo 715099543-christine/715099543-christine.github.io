@@ -5,10 +5,12 @@
   overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
 .stepper li {
-  flex: 1 0 auto; text-align: center; padding: 8px 10px; border-radius: 999px;
+  flex: 1 0 auto; display: flex; align-items: center; justify-content: center;
+  min-height: 44px; text-align: center; padding: 8px 10px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
-  font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 62px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 62px; cursor: pointer;
 }
+.stepper li:focus-visible { outline: 3px solid rgba(51, 211, 153, .45); outline-offset: 2px; }
 .stepper li.done { color: var(--accent); border-color: #1c5340; background: var(--accent-dim); }
 .stepper li.active { color: #04140f; background: linear-gradient(135deg, var(--accent), #0ea5e9); border-color: transparent; }
 
@@ -137,7 +139,7 @@
 .pf-item .pf-actions button.pf-danger { color: var(--danger); border-color: #5a2020; }
 
 @media (max-width: 760px) {
-  .stepper li { font-size: 11px; padding: 7px 8px; min-width: 54px; }
+  .stepper li { font-size: 11px; padding: 7px 8px; min-width: 54px; min-height: 44px; }
   .wiz-toolbar .pill { margin-left: 0; }
   .flow-row { grid-template-columns: 88px 1fr; }
   .flow-row .amt { grid-column: 2; text-align: left; }

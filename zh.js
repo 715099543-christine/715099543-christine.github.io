@@ -236,11 +236,55 @@ async function detectChannel() {
 function renderArchiveChannelNotice() {
   const node = $("pf-channel-notice");
   if (!node) return;
-  if (CHANNEL === "api") {
-    node.textContent = "注意：本次走后端通道。运行引擎时，你填写的家庭档案会作为请求发送到该后端服务器用于计算；是否留存、留存多久取决于该后端的部署方。本机浏览器仍会保存你主动点过「保存」的档案副本。";
-    return;
+  const familyStore = window.VerityFamilyStore;
+  const storageMode = familyStore && typeof familyStore.mode === "function" ? familyStore.mode() : "local";
+  const title = $("pf-storage-title");
+  const summary = $("pf-storage-summary");
+  const countHint = $("pf-count-hint");
+  const bytesHint = $("pf-bytes-hint");
+  const lastHint = $("pf-last-hint");
+  const cloud = storageMode === "cloud";
+
+  if (title) title.textContent = cloud ? "我的家庭档案（端到端加密云端保存）" : "我的家庭档案（保存在本机）";
+  if (summary) {
+    summary.textContent = cloud
+      ? "档案在浏览器内加密后保存到 Verity 后台数据库，服务端不持有解密口令；同一账号可在其他设备登录并解密取回。"
+      : "档案与账户只保存在这台设备的浏览器里，不上传；换设备前请先导出档案，并在新设备导入。";
   }
-  node.textContent = "本次运行在浏览器内完成：引擎就在这个页面上跑，家庭档案不会离开这台设备；本机保存的档案只在你自己点「保存」时写入，随时可以删除。";
+  if (countHint) countHint.textContent = cloud ? "当前账号的档案" : "本机浏览器存储";
+  if (bytesHint) bytesHint.textContent = cloud ? "解密后档案约值" : "本机存储约值";
+  if (lastHint) lastHint.textContent = cloud ? "登录后自动恢复" : "下次打开自动恢复";
+
+  /* 两个维度必须分别如实说明，缺一不可 —— 只写其中一个就会说出假话：
+       1) 计算通道：走后端时，用户填写的家庭档案会作为请求发送到该后端服务器；
+       2) 存储模式：云端时加密写入账号存储；本机时只在用户点「保存」时写入这台设备。
+     早期版本只按计算通道写，于是注册后切到云端仍宣称「档案只保存在本机」；
+     Round 47 一度又只按存储模式写，于是在后端通道下宣称「档案不会离开这台设备」。
+     两句都是假话，所以这里两个维度一起写。 */
+  const computeLine = CHANNEL === "api"
+    ? "本次计算走后端通道：你填写的家庭档案会作为请求发送到该后端服务器用于计算；是否留存、留存多久取决于该后端的部署方。"
+    : "本次计算在浏览器内完成：引擎就在这个页面上跑，家庭档案不会离开这台设备。";
+  const storageLine = cloud
+    ? "你主动保存的家庭档案会先在浏览器内加密，再写入账号对应的云端存储，同一账号可在其他设备解密取回。"
+    : "你主动点「保存」的家庭档案只写入这台设备的浏览器存储，不上传，随时可以删除。";
+  node.textContent = computeLine + storageLine;
+}
+
+function bindStorageCopyRefresh() {
+  const familyStore = window.VerityFamilyStore;
+  if (!familyStore || typeof familyStore.subscribe !== "function") return;
+  let lastMode = null;
+  familyStore.subscribe((snap) => {
+    const mode = (snap && snap.mode) || "local";
+    if (mode === lastMode) return;
+    lastMode = mode;
+    try {
+      renderArchiveChannelNotice();
+      renderHome();
+    } catch (ignored) {
+      /* UI 刷新失败不得影响存储层 */
+    }
+  });
 }
 
 function setBrowserChannel() {
@@ -1051,6 +1095,7 @@ function showStep(next) {
   document.querySelectorAll("#stepper li").forEach((item, index) => {
     item.classList.toggle("active", index + 1 === step);
     item.classList.toggle("done", index + 1 < step);
+    item.setAttribute("aria-current", index + 1 === step ? "step" : "false");
   });
   $("w-progress").textContent = `第 ${step} / ${STEPS} 步`;
   $("w-prev").disabled = step === 1;
@@ -2014,6 +2059,9 @@ async function run() {
     renderEvidence(result);
     rememberExportResult(result, channel);
     lastResultText = resultText;
+    /* 首次使用者可以直接填写并运行，不应因为未先手动命名/保存而丢掉档案、
+       让首页继续显示空占位。保存函数会用 profile_id 作为可靠的默认档案名。 */
+    if (!currentProfileId) await saveCurrentProfile();
     recordRunResult(result, profile);
     snapshotOpen = false;
     setResultSectionsVisible(true);
@@ -3600,17 +3648,27 @@ function resetAccount() {
 /* 顶部品牌区与 Hero：新用户引导「建立我的家庭」，老用户显示「继续使用」。 */
 function renderHome() {
   const acc = readAccount();
+  const familyStore = window.VerityFamilyStore;
+  const storageMode = familyStore && typeof familyStore.mode === "function" ? familyStore.mode() : "local";
+  const kindEl = $("hero-account-kind");
   const nameEl = $("hero-account-name");
   const metaEl = $("hero-account-meta");
   const back = $("hero-back");
   const registered = acc && acc.family_name;
+  if (kindEl) kindEl.textContent = storageMode === "cloud" ? "云端账户" : "本机账户";
   if (nameEl) {
     nameEl.textContent = registered ? `「${acc.family_name}」` : "尚未注册";
   }
   if (metaEl) {
-    metaEl.textContent = registered
-      ? `本机账户 ${esc(acc.account_id)} · 注册于 ${esc(acc.created_at)} · 仅保存在此浏览器，不上传`
-      : "首次保存家庭档案即完成注册（仅保存在本机浏览器，不上传）。";
+    if (storageMode === "cloud") {
+      metaEl.textContent = registered
+        ? `账号 ${esc(acc.account_id)} · 注册于 ${esc(acc.created_at)} · 档案加密后保存到云端`
+        : "首次保存家庭档案即建立账号档案，并加密同步到云端。";
+    } else {
+      metaEl.textContent = registered
+        ? `本机账户 ${esc(acc.account_id)} · 注册于 ${esc(acc.created_at)} · 仅保存在此浏览器，不上传`
+        : "首次保存家庭档案即完成注册（仅保存在本机浏览器，不上传）。";
+    }
   }
   const hasProfiles = storeState.profiles.length > 0;
   if (back) {
@@ -3623,7 +3681,14 @@ function renderHome() {
 
 /* 首页总览的数据源：优先最近一次运行（刚运行完），其次档案上的结果快照。 */
 function homeResult() {
-  if (!currentProfileId) return null;
+  if (!currentProfileId) {
+    /* 首次使用是「先运行、后保存」的正常路径：用户还没命名保存任何档案就直接跑了引擎。
+       此时首页必须据实展示这一次算出来的结果 —— 否则用户刚看完满页计算结果，
+       回到首页却是「还没有家庭档案」+ 满屏「—」，会直接以为引擎没算（Round 47 线上实测）。
+       只认这一页会话里刚跑出来的结果（exportState.result），不读任何持久化数据，
+       因此不可能把别户家庭的结果挂上来。 */
+    return exportState.result ? { result: exportState.result, source: "fresh-unsaved", saved_at: "" } : null;
+  }
   const item = findProfile(currentProfileId);
   if (!item) return null;
   /* 快照优先：快照与档案对象绑定（随档案保存），不会跨档案串户。
@@ -3934,7 +3999,7 @@ function renderHomeDashboard() {
   const askEl = $("ask-answer");
   if (askEl) askEl.dataset.ready = src ? "1" : "0";
 
-  if (!has) {
+  if (!has && !(src && src.result)) {
     if (statusEl) statusEl.textContent = "还没有家庭档案。点「建立我的家庭」注册并建立第一份家庭档案。";
     ["safety", "cash", "education", "protection_gap", "debt", "growth"].forEach((key) =>
       setHomeMetric(key, "—")
@@ -4014,6 +4079,8 @@ function renderHomeDashboard() {
           }
         });
       }
+    } else if (src.source === "fresh-unsaved") {
+      statusEl.textContent = `本次运行结果：${verdictLabel}（尚未保存为家庭档案，保存后可在其他设备取回）。`;
     } else {
       statusEl.textContent = `本次运行结果：${verdictLabel}。`;
     }
@@ -4202,6 +4269,17 @@ function bind() {
 
   $("w-prev").addEventListener("click", () => showStep(step - 1));
   $("w-next").addEventListener("click", () => showStep(step + 1));
+  document.querySelectorAll("#stepper li").forEach((item) => {
+    const destination = Number(item.dataset.stepLabel);
+    item.setAttribute("role", "button");
+    item.setAttribute("tabindex", "0");
+    item.addEventListener("click", () => showStep(destination));
+    item.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      showStep(destination);
+    });
+  });
   $("w-run").addEventListener("click", run);
   $("r-snapshot-rerun").addEventListener("click", () => {
     showStep(STEPS);
@@ -4525,6 +4603,7 @@ function boot() {
   if (loaded.migrated) writeStore();
   if (loaded.error) setMsg(loaded.error, "warn");
   renderProfileList();
+  bindStorageCopyRefresh();
   addMember({ age: 35, annual_income: 300000, income_stability: "high", dependents: 0 });
   bind();
   bindSectionNav();

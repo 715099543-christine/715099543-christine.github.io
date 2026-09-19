@@ -1812,9 +1812,9 @@
     </div>
   </div>
   <div class="hero-account" id="hero-account">
-    <div class="k">本机账户</div>
+    <div class="k" id="hero-account-kind">本机账户</div>
     <div class="v" id="hero-account-name">尚未注册</div>
-    <div class="h" id="hero-account-meta">首次保存家庭档案即完成注册（仅保存在本机浏览器）。</div>
+    <div class="h" id="hero-account-meta">正在确认账户与档案的保存位置…</div>
   </div>
 </section>
 
@@ -1905,14 +1905,14 @@
   </section>
 
   <section class="card" id="profiles">
-    <h2>我的家庭档案（保存在本机）</h2>
-    <div class="sub">档案与账户只保存在这台设备的浏览器里，不上传、不收集身份信息。换手机或换浏览器时用「导出 / 导入」搬运；「建立我的家庭」首次保存即完成本机注册。</div>
+    <h2 id="pf-storage-title">我的家庭档案</h2>
+    <div class="sub" id="pf-storage-summary">正在确认档案的保存位置与数据流向，确认后会按你当前的账户与通道如实说明。</div>
     <div class="sub" id="pf-channel-notice">正在确认本次运行的通道，确认后会如实说明家庭档案的流向。</div>
 
     <div class="grid c3">
-      <div class="metric"><div class="k">已保存档案</div><div class="v info" id="pf-count">0</div><div class="h">本机浏览器存储</div></div>
-      <div class="metric"><div class="k">占用空间</div><div class="v" id="pf-bytes">—</div><div class="h">本机存储约值</div></div>
-      <div class="metric"><div class="k">当前档案</div><div class="v" id="pf-last">未保存</div><div class="h">下次打开自动恢复</div></div>
+      <div class="metric"><div class="k">已保存档案</div><div class="v info" id="pf-count">0</div><div class="h" id="pf-count-hint">本机浏览器存储</div></div>
+      <div class="metric"><div class="k">占用空间</div><div class="v" id="pf-bytes">—</div><div class="h" id="pf-bytes-hint">本机存储约值</div></div>
+      <div class="metric"><div class="k">当前档案</div><div class="v" id="pf-last">未保存</div><div class="h" id="pf-last-hint">下次打开自动恢复</div></div>
     </div>
 
     <div class="wiz-toolbar">
