@@ -1,0 +1,273 @@
+:root {
+  --bg: #070b16;
+  --bg-2: #0d1424;
+  --panel: #111a2e;
+  --panel-2: #16203a;
+  --line: #22304f;
+  --text: #e8eefc;
+  --muted: #8fa2c7;
+  --accent: #34d399;
+  --accent-dim: #0f3d2e;
+  --blue: #60a5fa;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --violet: #a78bfa;
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 15% -10%, #14213d 0%, var(--bg) 55%);
+  color: var(--text);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.banner {
+  background: linear-gradient(90deg, #7f1d1d 0%, #b45309 50%, #7f1d1d 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-align: center;
+  padding: 9px 12px;
+  text-transform: uppercase;
+}
+
+header.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(9, 14, 26, .82);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+#nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  /* 手机端 390px 实测：header 是 flex 容器，本轮 Hero/品牌区变宽后这个按钮被
+     压缩到 36.9px 宽（低于 44px 最小触控区）。这里禁止收缩并兜住最小宽度。 */
+  flex: 0 0 46px;
+  min-width: 46px;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+#nav-toggle span {
+  display: block;
+  height: 2px;
+  width: 22px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: var(--text);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand .mark {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  display: grid; place-items: center;
+  font-weight: 800; color: #05130f; font-size: 18px;
+}
+.brand h1 { margin: 0; font-size: 17px; letter-spacing: .3px; }
+.brand p { margin: 0; color: var(--muted); font-size: 12px; }
+
+nav a {
+  color: var(--muted); text-decoration: none; margin-left: 16px;
+  font-size: 13px; font-weight: 600;
+  /* T-E0-038：桌面导航也是可点目标，命中盒统一不小于 44 px（与手机端一致），
+     避免出现 16 px 高的“摸不到”链接；header 高度由 JS 实测写入滚动补偿。 */
+  display: inline-flex; align-items: center;
+  min-height: 44px; padding: 0 4px;
+}
+nav a:hover { color: var(--text); }
+
+main { max-width: 1240px; margin: 0 auto; padding: 26px 22px 80px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--panel);
+  border-radius: 999px; padding: 3px 11px; font-size: 11.5px;
+  color: var(--muted); font-weight: 600;
+}
+.pill.ok { color: var(--accent); border-color: #1c5340; background: var(--accent-dim); }
+.pill.warn { color: var(--warn); border-color: #5c4508; background: #2a2107; }
+.pill.bad { color: var(--danger); border-color: #5a2020; background: #2a1111; }
+.pill.info { color: var(--blue); border-color: #1e3a5f; background: #101d33; }
+
+section.card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+section.card > h2 {
+  margin: 0 0 4px; font-size: 15px; letter-spacing: .4px;
+  text-transform: uppercase; color: var(--muted);
+}
+section.card > .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
+
+.grid { display: grid; gap: 14px; }
+.grid.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid.c5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid.c3, .grid.c4, .grid.c5, .grid.c2 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { .grid.c3, .grid.c4, .grid.c5, .grid.c2 { grid-template-columns: 1fr; } }
+
+.metric {
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px 15px;
+}
+.metric .k { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; }
+.metric .v { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.metric .h { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+.v.pos { color: var(--accent); } .v.neg { color: var(--danger); }
+.v.warn { color: var(--warn); } .v.info { color: var(--blue); }
+
+.action-hero {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  background: linear-gradient(120deg, #10233c 0%, #0d1b2f 60%);
+  border: 1px solid #24405f; border-radius: 12px; padding: 18px;
+}
+.action-hero .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+.action-hero .value { font-size: 30px; font-weight: 800; letter-spacing: .5px; }
+.action-hero .why { color: var(--muted); font-size: 13px; max-width: 620px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 12.5px; }
+tbody tr:hover { background: rgba(96, 165, 250, .05); }
+.scroll { overflow-x: auto; }
+
+.bar { height: 8px; border-radius: 999px; background: #1b2743; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 999px; }
+.bar > i.cash { background: var(--blue); }
+.bar > i.bond { background: var(--accent); }
+.bar > i.index { background: var(--violet); }
+.bar > i.equity { background: var(--warn); }
+.bar > i.gold { background: #f0abfc; }
+.bar > i.prot { background: #22d3ee; }
+
+.layer-row { display: grid; grid-template-columns: 150px 1fr 130px; gap: 12px; align-items: center; padding: 7px 0; }
+.layer-row .name { font-size: 12.5px; color: var(--muted); }
+.layer-row .amt { font-family: var(--mono); font-size: 12.5px; text-align: right; }
+
+form .field { margin-bottom: 12px; }
+form label { display: block; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+input, select, textarea {
+  width: 100%; background: #0a1120; border: 1px solid var(--line); color: var(--text);
+  border-radius: 9px; padding: 9px 11px; font-size: 13.5px; font-family: inherit;
+  /* 手机端最小触控目标 44 px（T-E0-038）：42 px 会让整列输入框成为最矮的可点元素。 */
+  min-height: 44px;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+textarea { min-height: 84px; resize: vertical; font-family: var(--mono); font-size: 12px; }
+
+button {
+  background: linear-gradient(135deg, var(--accent), #0ea5e9);
+  color: #04140f; border: 0; border-radius: 10px; padding: 11px 18px;
+  font-weight: 700; font-size: 13.5px; cursor: pointer;
+  min-height: 44px;
+}
+button:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+
+pre.code {
+  background: #060b16; border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px; overflow: auto; font-family: var(--mono); font-size: 11.5px;
+  color: #a8c4ea; max-height: 320px; margin: 0;
+}
+
+.verdict { font-weight: 800; letter-spacing: .06em; }
+.verdict.PASS { color: var(--accent); }
+.verdict.REVIEW { color: var(--blue); }
+.verdict.REFUSE { color: var(--danger); }
+.verdict.ABSTAIN { color: var(--warn); }
+
+.sev-critical { color: var(--danger); font-weight: 700; }
+.sev-high { color: #fb923c; font-weight: 600; }
+.sev-medium { color: var(--warn); }
+.sev-low { color: var(--accent); }
+
+.price-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 860px) { .price-grid { grid-template-columns: 1fr; } }
+.price {
+  border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel-2);
+  display: flex; flex-direction: column;
+}
+.price.featured { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(52, 211, 153, .25); }
+.price h3 { margin: 0 0 2px; font-size: 15px; }
+.price .amt { font-size: 26px; font-weight: 800; margin: 8px 0 2px; }
+.price .amt small { font-size: 12px; color: var(--muted); font-weight: 500; }
+.price ul { margin: 12px 0 0; padding-left: 17px; color: var(--muted); font-size: 13px; }
+.price ul li { margin-bottom: 6px; }
+.price .cta { margin-top: auto; padding-top: 16px; }
+
+.note { color: var(--muted); font-size: 12px; border-left: 2px solid var(--line); padding-left: 10px; margin-top: 14px; }
+.err { color: var(--danger); font-size: 13px; }
+.hidden { display: none; }
+.mono { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+footer { color: var(--muted); font-size: 12px; text-align: center; padding: 26px 22px 40px; }
+footer a { display: inline-block; padding: 14px 6px; line-height: 1.4; }
+
+@media (max-width: 760px) {
+  header.top { padding: 14px 16px; gap: 10px; flex-wrap: nowrap; }
+  .brand .mark { width: 32px; height: 32px; font-size: 16px; }
+  .brand h1 { font-size: 14px; }
+  .brand p { display: none; }
+
+  #nav-toggle { display: flex; }
+  nav#main-nav {
+    position: fixed;
+    top: 62px;
+    right: 12px;
+    left: 12px;
+    z-index: 30;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(9, 14, 26, .97);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+  }
+  nav#main-nav.open { display: flex; }
+  nav#main-nav a {
+    margin: 0;
+    padding: 13px 14px;
+    font-size: 14.5px;
+    border-radius: 8px;
+    min-height: 44px;
+  }
+  nav#main-nav a:hover { background: rgba(96, 165, 250, .08); }
+
+  main { padding: 16px 12px 60px; }
+  section.card { padding: 16px 14px; }
+  .banner { font-size: 10px; padding: 8px 10px; letter-spacing: .05em; }
+  .action-hero .value { font-size: 24px; }
+  .metric .v { font-size: 20px; }
+  .layer-row { grid-template-columns: 96px 1fr; }
+  .layer-row .amt { grid-column: 2; text-align: left; }
+  .price { padding: 14px; }
+  .price .amt { font-size: 22px; }
+}

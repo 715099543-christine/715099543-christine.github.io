@@ -1,0 +1,253 @@
+/* Verity AI家庭CFO · /family/ 账号闸门、云端同步状态与保险实验室挂载区（Round 40） */
+
+html.family-locked .top,
+html.family-locked main,
+html.family-locked footer,
+html.family-locked #sec-nav,
+html.family-locked #sec-index-panel,
+html.family-locked #sec-index-scrim {
+  display: none !important;
+}
+
+#family-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(46, 106, 255, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(0, 214, 178, 0.16), transparent 60%),
+    #070b16;
+  color: #e8ecf7;
+  padding: max(18px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+}
+#family-gate .gate-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+}
+#family-gate .gate-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 18px;
+}
+#family-gate .gate-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 22px;
+  background: linear-gradient(140deg, #2f6bff, #00d6b2);
+  color: #05101f;
+}
+#family-gate h2 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.3;
+}
+#family-gate .gate-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #93a1c4;
+}
+#family-gate .gate-card {
+  background: rgba(14, 21, 40, 0.86);
+  border: 1px solid rgba(120, 145, 200, 0.22);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+}
+#family-gate .gate-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+#family-gate .gate-tab {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 145, 200, 0.26);
+  background: transparent;
+  color: #cdd7ef;
+  font-size: 14px;
+  cursor: pointer;
+}
+#family-gate .gate-tab[aria-selected="true"] {
+  background: rgba(47, 107, 255, 0.22);
+  border-color: rgba(47, 107, 255, 0.7);
+  color: #fff;
+  font-weight: 600;
+}
+#family-gate label {
+  display: block;
+  font-size: 12px;
+  color: #9fb0d4;
+  margin: 12px 0 6px;
+}
+#family-gate input[type="email"],
+#family-gate input[type="password"],
+#family-gate input[type="text"] {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 145, 200, 0.3);
+  background: rgba(6, 11, 24, 0.9);
+  color: #eef2ff;
+  font-size: 16px;
+  padding: 10px 12px;
+}
+#family-gate input:focus {
+  outline: 2px solid rgba(47, 107, 255, 0.65);
+  outline-offset: 1px;
+}
+#family-gate .gate-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #b7c4e2;
+  min-height: 44px;
+}
+#family-gate .gate-remember input {
+  width: 18px;
+  height: 18px;
+}
+#family-gate button[type="submit"] {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(140deg, #2f6bff, #1e8bff);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#family-gate button[type="submit"][disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+#gate-busy {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #8fd6ff;
+  text-align: center;
+}
+#gate-msg {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  background: rgba(255, 106, 106, 0.12);
+  border: 1px solid rgba(255, 106, 106, 0.4);
+  color: #ffd2d2;
+}
+#gate-msg[data-kind="ok"] {
+  background: rgba(0, 214, 178, 0.12);
+  border-color: rgba(0, 214, 178, 0.4);
+  color: #b8f5e6;
+}
+#family-gate .gate-note {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(120, 145, 200, 0.18);
+  font-size: 12px;
+  line-height: 1.7;
+  color: #93a1c4;
+}
+#family-gate .gate-note strong {
+  color: #cdd7ef;
+}
+#family-gate .gate-back {
+  display: inline-block;
+  margin-top: 16px;
+  color: #8fd6ff;
+  font-size: 13px;
+  text-decoration: none;
+  min-height: 44px;
+  line-height: 44px;
+}
+
+/* 顶栏云端状态条 */
+#cloud-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(7, 11, 22, 0.94);
+  border-bottom: 1px solid rgba(120, 145, 200, 0.2);
+  backdrop-filter: blur(8px);
+  font-size: 12.5px;
+  color: #c6d2ee;
+}
+#cloud-bar .hidden {
+  display: none;
+}
+#cloud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+#cloud-chip::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #00d6b2;
+  flex: none;
+}
+#cloud-chip[data-kind="busy"]::before {
+  background: #ffc75a;
+}
+#cloud-chip[data-kind="bad"]::before {
+  background: #ff6a6a;
+}
+#cloud-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#cloud-who {
+  color: #8ea0c6;
+  font-size: 12px;
+}
+#cloud-logout {
+  margin-left: auto;
+  /* 手机端实测：34px 低于 44px 最小触控区，这里按触控标准兜住。 */
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 145, 200, 0.34);
+  background: transparent;
+  color: #c6d2ee;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+#cloud-logout:hover {
+  border-color: rgba(255, 106, 106, 0.6);
+  color: #ffd2d2;
+}
+
+/* 保险实验室挂载区 */
+#insurance-lab .ins-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+}
+#insurance-lab .ins-total {
+  font-variant-numeric: tabular-nums;
+}
