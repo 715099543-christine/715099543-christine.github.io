@@ -1234,7 +1234,7 @@
   "x-verity": {
     "api_version": "v0",
     "api_contract_version": "0.2.0",
-    "product_version": "e0.26.0",
+    "product_version": "e0.27.0",
     "algorithm_version": "e0.4.0",
     "production_authority": "OFF",
     "release_gate": "DENY",
@@ -1910,9 +1910,9 @@
     <div class="sub" id="pf-channel-notice">正在确认本次运行的通道，确认后会如实说明家庭档案的流向。</div>
 
     <div class="grid c3">
-      <div class="metric"><div class="k">已保存档案</div><div class="v info" id="pf-count">0</div><div class="h" id="pf-count-hint">本机浏览器存储</div></div>
-      <div class="metric"><div class="k">占用空间</div><div class="v" id="pf-bytes">—</div><div class="h" id="pf-bytes-hint">本机存储约值</div></div>
-      <div class="metric"><div class="k">当前档案</div><div class="v" id="pf-last">未保存</div><div class="h" id="pf-last-hint">下次打开自动恢复</div></div>
+      <div class="metric"><div class="k">已保存档案</div><div class="v info" id="pf-count">0</div><div class="h" id="pf-count-hint">正在确认档案的保存位置</div></div>
+      <div class="metric"><div class="k">占用空间</div><div class="v" id="pf-bytes">—</div><div class="h" id="pf-bytes-hint">正在确认保存位置</div></div>
+      <div class="metric"><div class="k">当前档案</div><div class="v" id="pf-last">未保存</div><div class="h" id="pf-last-hint">打开页面后自动恢复</div></div>
     </div>
 
     <div class="wiz-toolbar">
@@ -1921,16 +1921,17 @@
       <button type="button" class="ghost" id="pf-save-as">另存为新档案</button>
       <button type="button" class="ghost" id="pf-export">导出当前档案</button>
       <button type="button" class="ghost" id="pf-import">导入档案文件</button>
-      <button type="button" class="ghost" id="pf-clear-all">清空本机档案</button>
+      <button type="button" class="ghost" id="pf-clear-all">清空已保存档案</button>
+      <button type="button" class="ghost hidden" id="pf-undo">撤销删除</button>
       <input type="file" id="pf-file" accept="application/json,.json" class="hidden" aria-hidden="true" />
     </div>
 
     <div class="note" id="pf-msg">还没有保存过档案。填完下面的向导后点「保存当前档案」，下次打开就不用重新输入。</div>
     <div id="pf-list"></div>
-    <div class="sub" style="margin-top:12px">
+    <div class="sub" id="pf-snapshot-note" style="margin-top:12px">
       每运行一次引擎，这次结果（判定、现金流与资产负债、生存底线、风险排序、六域方案、证据与审计）
-      会随档案一起存进本机；之后点档案行里的「查看上次结果」，浏览器会用与引擎相同的规范 JSON
-      重算哈希逐项复核，复核不通过就不展示任何指标。
+      会随档案一起保存；保存位置按你当前的账户与通道确定后会在这里如实说明。之后点档案行里的
+      「查看上次结果」，浏览器会用与引擎相同的规范 JSON 重算哈希逐项复核，复核不通过就不展示任何指标。
     </div>
   </section>
 

@@ -230,6 +230,29 @@ async function detectChannel() {
   setBrowserChannel();
 }
 
+/* 档案动作文案的措辞必须跟着真实存储模式走。
+   Round 48 P0（实测复现）：云端账号下，同一屏同时出现「我的家庭档案（端到端加密云端保存）」
+   与「已清空本机档案」/「清空本机档案」按钮，用户无法判断数据在哪、删掉的是哪一份 ——
+   这正是「仅保存于本机」与「已保存到云端」互相矛盾的老问题换了个位置。 */
+function storageWord() {
+  const familyStore = window.VerityFamilyStore;
+  const mode = familyStore && typeof familyStore.mode === "function" ? familyStore.mode() : "local";
+  const cloud = mode === "cloud";
+  return {
+    cloud: cloud,
+    place: cloud ? "云端账号" : "本机",
+    toPlace: cloud ? "到你的云端账号" : "到本机",
+    fromPlace: cloud ? "从云端账号" : "从本机",
+    empty: cloud ? "这个账号还没有已保存档案。" : "本机还没有已保存档案。",
+    limit: (limit) => `${cloud ? "这个账号" : "本机"}最多保存 ${limit} 份档案，请先删除不再需要的档案。`,
+    clearLabel: cloud ? "清空账号档案" : "清空本机档案",
+    clearConfirm: (count) =>
+      cloud
+        ? `清空账号里全部 ${count} 份档案？同一账号在其他设备上也会一起消失。（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`
+        : `清空本机全部 ${count} 份档案？（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`,
+  };
+}
+
 /* T-E0-008 C-03：档案流向必须如实说明，不能写死。
    浏览器通道下引擎在本机跑，档案不出这台设备；后端通道下档案会随请求发给后端，
    那句话就不再成立 —— 所以文案跟着通道走。 */
@@ -254,6 +277,16 @@ function renderArchiveChannelNotice() {
   if (countHint) countHint.textContent = cloud ? "当前账号的档案" : "本机浏览器存储";
   if (bytesHint) bytesHint.textContent = cloud ? "解密后档案约值" : "本机存储约值";
   if (lastHint) lastHint.textContent = cloud ? "登录后自动恢复" : "下次打开自动恢复";
+  /* 按钮与说明文字同样必须跟着模式走：静态写死的「清空本机档案」在云端账号下是假信息。 */
+  const word = storageWord();
+  const clearButton = $("pf-clear-all");
+  if (clearButton) clearButton.textContent = word.clearLabel;
+  const snapshotNote = $("pf-snapshot-note");
+  if (snapshotNote) {
+    snapshotNote.textContent = cloud
+      ? "每运行一次引擎，这次结果（判定、现金流与资产负债、生存底线、风险排序、六域方案、证据与审计）会随档案一起加密保存到你的云端账号；之后点档案行里的「查看上次结果」，浏览器会用与引擎相同的规范 JSON 重算哈希逐项复核，复核不通过就不展示任何指标。"
+      : "每运行一次引擎，这次结果（判定、现金流与资产负债、生存底线、风险排序、六域方案、证据与审计）会随档案一起存进本机；之后点档案行里的「查看上次结果」，浏览器会用与引擎相同的规范 JSON 重算哈希逐项复核，复核不通过就不展示任何指标。";
+  }
 
   /* 两个维度必须分别如实说明，缺一不可 —— 只写其中一个就会说出假话：
        1) 计算通道：走后端时，用户填写的家庭档案会作为请求发送到该后端服务器；
@@ -2071,7 +2104,7 @@ async function run() {
       setMsg(`结果已算出，但结果快照未保存：${stored.reason}。`, "warn");
     } else {
       setMsg(
-        `「${(findProfile(currentProfileId) || {}).name || "当前档案"}」的结果快照已保存到本机，并通过 ${stored.proof.checks_passed}/${stored.proof.checks_total} 项哈希复核；下次打开这份档案可以重新复核当次结论。`,
+        `「${(findProfile(currentProfileId) || {}).name || "当前档案"}」的结果快照已保存${storageWord().toPlace}，并通过 ${stored.proof.checks_passed}/${stored.proof.checks_total} 项哈希复核；下次打开这份档案可以重新复核当次结论。`,
         "ok"
       );
     }
@@ -2498,6 +2531,73 @@ function setMsg(text, kind) {
   }
 }
 
+/* ------------------------------------------------- 删除的可控恢复（第九条·8）
+   「删除数据必须有二次确认和可控恢复机制」：单条删除与清空都进撤销缓冲，用户当场一键恢复。
+   缓冲只活在当前页面会话内（不写进 localStorage / IndexedDB），因此云端模式下也不会在设备上
+   留下第二份明文家庭数据；离开页面后缓冲消失，此时界面已如实说明「不可撤销」。 */
+let undoBuffer = null;
+
+function renderUndo() {
+  const button = $("pf-undo");
+  if (!button) return;
+  const rows = undoBuffer && undoBuffer.entries ? undoBuffer.entries.length : 0;
+  button.classList.toggle("hidden", rows === 0);
+  button.textContent = rows ? `撤销删除（${rows} 份）` : "撤销删除";
+}
+
+function rememberDeleted(entries) {
+  const rows = (entries || []).filter(Boolean);
+  undoBuffer = rows.length ? { entries: rows, at: nowStamp() } : null;
+  renderUndo();
+}
+
+function undoDelete() {
+  if (!undoBuffer || !undoBuffer.entries.length) {
+    setMsg("没有可撤销的删除。", "");
+    return;
+  }
+  const restored = undoBuffer.entries;
+  undoBuffer = null;
+  restored.forEach((entry) => {
+    if (!entry || !entry.id || findProfile(entry.id)) return;
+    storeState.profiles.push(entry);
+  });
+  if (!currentProfileId && restored.length) currentProfileId = restored[restored.length - 1].id;
+  renderUndo();
+  const failure = writeStore();
+  renderProfileList();
+  renderHome();
+  renderHomeDashboard();
+  setMsg(
+    failure
+      ? `已恢复 ${restored.length} 份档案，但重新保存失败：${failure}`
+      : `已恢复 ${restored.length} 份被删除的档案。`,
+    failure ? "warn" : "ok"
+  );
+}
+
+/* ------------------------------------------------- 未保存数据的离开提示（第七条·8）
+   「未保存的数据必须有明确提示，禁止无声丢失」：向导里有改动且尚未保存时，离开页面前明确拦截。
+   只在确实存在未保存改动时挂拦截，正常浏览不会被弹窗打扰。 */
+let savedSnapshot = "";
+
+function wizardSnapshot() {
+  try {
+    return JSON.stringify(collectProfile());
+  } catch (err) {
+    return "";
+  }
+}
+
+function markSavedSnapshot() {
+  savedSnapshot = wizardSnapshot();
+}
+
+function hasUnsavedChanges() {
+  if (!savedSnapshot) return false;
+  return wizardSnapshot() !== savedSnapshot;
+}
+
 function renderProfileList() {
   const list = $("pf-list");
   $("pf-count").textContent = String(storeState.profiles.length);
@@ -2505,7 +2605,7 @@ function renderProfileList() {
   $("pf-last").textContent = currentProfileId ? (findProfile(currentProfileId) || {}).name || "未保存" : "未保存";
 
   if (!storeState.profiles.length) {
-    list.innerHTML = '<div class="note">本机还没有已保存档案。</div>';
+    list.innerHTML = `<div class="note">${esc(storageWord().empty)}</div>`;
     return;
   }
 
@@ -2544,7 +2644,7 @@ function renderProfileList() {
 
 function addProfile(name, profile) {
   if (storeState.profiles.length >= PROFILE_STORE_LIMIT) {
-    setMsg(`本机最多保存 ${PROFILE_STORE_LIMIT} 份档案，请先删除不再需要的档案。`, "warn");
+    setMsg(storageWord().limit(PROFILE_STORE_LIMIT), "warn");
     return false;
   }
   const pending = pendingImportedSnapshot;
@@ -2585,7 +2685,8 @@ function commitStore(name, verb) {
   renderProfileList();
   renderHome();
   renderHomeDashboard();
-  setMsg(`已${verb}「${name}」到本机。下次打开本页面会自动恢复这份档案的输入。`, "ok");
+  setMsg(`已${verb}「${name}」${storageWord().toPlace}。下次打开本页面会自动恢复这份档案的输入。`, "ok");
+  markSavedSnapshot();
   return true;
 }
 
@@ -2677,20 +2778,28 @@ function openProfile(id) {
     "ok"
   );
   $("wizard").scrollIntoView({ behavior: "smooth", block: "start" });
+  markSavedSnapshot();
 }
 
 function deleteProfile(id) {
   const item = findProfile(id);
   if (!item) return;
-  if (!window.confirm(`删除本机档案「${item.name}」？该档案的输入、上次运行摘要与结果快照都会被移除。`)) return;
+  const word = storageWord();
+  if (
+    !window.confirm(
+      `删除${word.place}上的档案「${item.name}」？该档案的输入、上次运行摘要与结果快照都会被移除。（删除后可在本页点「撤销删除」恢复；离开本页后不可撤销。）`
+    )
+  )
+    return;
   storeState.profiles = storeState.profiles.filter((entry) => entry.id !== id);
   if (currentProfileId === id) currentProfileId = "";
   if (storeState.last_opened === id) storeState.last_opened = "";
+  rememberDeleted([item]);
   writeStore();
   renderProfileList();
   renderHome();
   renderHomeDashboard();
-  setMsg(`已从本机删除「${item.name}」。`, "ok");
+  setMsg(`已${word.fromPlace}删除「${item.name}」。误删可点「撤销删除」恢复。`, "ok");
 }
 
 function exportCurrentProfile() {
@@ -2854,19 +2963,27 @@ function purgeLocalArchiveData() {
 }
 
 function clearAllProfiles() {
+  const word = storageWord();
   if (!storeState.profiles.length) {
-    setMsg("本机没有已保存档案。", "");
+    setMsg(word.cloud ? "这个账号还没有已保存档案。" : "本机没有已保存档案。", "");
     return;
   }
-  if (!window.confirm(`清空本机全部 ${storeState.profiles.length} 份档案？此操作不可撤销。`)) return;
+  if (!window.confirm(word.clearConfirm(storeState.profiles.length))) return;
+  /* 删除必须有可控恢复机制（第九条·8）：清空与单条删除都先进撤销缓冲，用户当场可恢复。
+     缓冲只活在当前页面会话内、不落盘，因此不会在设备上留下第二份家庭数据。 */
+  const removedEntries = storeState.profiles.slice();
   storeState = emptyStore();
   currentProfileId = "";
   const removed = purgeLocalArchiveData();
+  rememberDeleted(removedEntries);
   renderProfileList();
   accountState = null;
   renderHome();
   renderHomeDashboard();
-  setMsg(`已清空本机档案（含 ${removed} 项本机数据，包括此前隔离出来的损坏副本）。当前页面上的输入仍在，可重新保存。`, "ok");
+  setMsg(
+    `已清空${word.place}的 ${removedEntries.length} 份档案（含 ${removed} 项${word.cloud ? "本机缓存" : "本机数据"}，包括此前隔离出来的损坏副本）。点「撤销删除」可以恢复；当前页面上的输入仍在，可重新保存。`,
+    "ok"
+  );
 }
 
 /* 打开页面时恢复上次档案的输入（只恢复输入；引擎必须由用户当场重新运行）。 */
@@ -2880,6 +2997,7 @@ function restoreLastProfile() {
   renderHome();
   renderHomeDashboard();
   setMsg(`已自动恢复上次打开的档案「${item.name}」的输入。点「运行 Verity 引擎」按当前输入重新计算。`, "ok");
+  markSavedSnapshot();
 }
 
 /* 运行成功后把这条 run 的摘要挂到当前档案上，作为「上次判定」证据。 */
@@ -3160,7 +3278,7 @@ async function openSnapshot(id) {
   snapshotOpen = true;
   $("r-snapshot").classList.remove("hidden");
   $("r-snapshot-sub").innerHTML =
-    `这是 <strong>${esc(snapshot.saved_at || "—")}</strong> 保存在本机的「${esc(item.name)}」结果快照` +
+    `这是 <strong>${esc(snapshot.saved_at || "—")}</strong> 保存在${storageWord().place}的「${esc(item.name)}」结果快照` +
     `（run_id <span class="mono">${esc(snapshot.run_id || "—")}</span>，引擎版本 ${esc(snapshot.algorithm_version || "—")}）——` +
     `<strong>不是本次重算</strong>，也没有自动重跑引擎。要按现在的输入重算，点下面的「按当前输入重新运行」。`;
   $("r-snapshot-proof").innerHTML =
@@ -3175,7 +3293,7 @@ async function openSnapshot(id) {
 
   if (proof.ok) {
     setResultSectionsVisible(true);
-    renderMeta(result, "本机保存的结果快照（未重新计算）");
+    renderMeta(result, `${storageWord().place}保存的结果快照（未重新计算）`);
     renderVerdict(result);
     renderBalance(result, profile);
     lastResultForTrend = { result, profile };
@@ -3188,7 +3306,7 @@ async function openSnapshot(id) {
     renderStress(result);
     renderTimeline(result);
     renderEvidence(result);
-    rememberExportResult(result, "本机保存的结果快照（未重新计算）");
+    rememberExportResult(result, `${storageWord().place}保存的结果快照（未重新计算）`);
   } else {
     clearResultAreas();
     setResultSectionsVisible(false);
@@ -4224,6 +4342,7 @@ function bind() {
     }
   });
   $("w-clear").addEventListener("click", () => {
+    markSavedSnapshot();
     detachCurrentProfile();
     clearWizard();
     showStep(1);
@@ -4237,6 +4356,15 @@ function bind() {
     event.target.value = "";
   });
   $("pf-clear-all").addEventListener("click", clearAllProfiles);
+  $("pf-undo").addEventListener("click", undoDelete);
+  renderUndo();
+  /* 未保存输入的离开拦截：只在真的有改动时生效，且不阻止用户在已保存后正常离开。 */
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
+    return "";
+  });
   $("es-start").addEventListener("click", () => {
     ensureBrowserEngine().catch(() => {});
   });
@@ -4605,6 +4733,8 @@ function boot() {
   renderProfileList();
   bindStorageCopyRefresh();
   addMember({ age: 35, annual_income: 300000, income_stability: "high", dependents: 0 });
+  /* 启动时就确立「干净基线」：只有启动之后被改动的输入才算未保存。 */
+  markSavedSnapshot();
   bind();
   bindSectionNav();
   showStep(1);
