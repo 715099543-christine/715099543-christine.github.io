@@ -528,10 +528,21 @@
         );
         rows.forEach(function (row) {
           var q = state.quotes[row.p.id] || {};
+          var dims = [];
+          var pushDim = function (label, value) {
+            if (value !== null && value !== undefined && String(value).trim() !== "") dims.push(["<b>" + label + "</b>", esc(String(value))].join(""));
+          };
+          pushDim("保障期", row.p.term);
+          pushDim("保障", Array.isArray(row.p.coverage_highlights) ? row.p.coverage_highlights.join("；") : row.p.coverage_highlights);
+          pushDim("除外责任", Array.isArray(row.p.exclusions) ? row.p.exclusions.join("；") : row.p.exclusions);
+          pushDim("等待期", row.p.waiting_period);
+          pushDim("续保条件", row.p.guaranteed_renewability === true ? "保证续保" : row.p.guaranteed_renewability === false ? "不保证续保（以正式条款为准）" : row.p.guaranteed_renewability);
+          pushDim("保费基准", row.p.premium_basis);
           html.push(
             "<tr><td><input type=\"checkbox\" data-ins-pick=\"" + esc(row.p.id) + "\"" + (state.selected[row.p.id] ? " checked" : "") + " /></td>" +
               "<td>" + esc(row.p.insurer) + "<div class=\"verity-ins-sub\">" + esc(row.p.product_name) + "</div>" +
-              '<div class="verity-ins-sub"><a href="' + esc(row.p.source_url) + '" target="_blank" rel="noopener noreferrer">资料来源</a> · 核对日 ' + esc(row.p.as_of_date) + "</div></td>" +
+              '<div class="verity-ins-compare">' + dims.map(function (d) { return '<div class="verity-ins-sub">' + d + "</div>"; }).join("") + "</div>" +
+              '<div class="verity-ins-sub"><a href="' + esc(row.p.source_url) + '" target="_blank" rel="noopener noreferrer">资料来源（承保方公开页面）</a> · 核对日 ' + esc(row.p.as_of_date) + "</div></td>" +
               '<td class="num"><input type="number" min="0" step="100" data-ins-premium="' + esc(row.p.id) + '" value="' + (q.annual_premium_hkd || "") + '" placeholder="待询价" /></td>' +
               '<td class="num"><input type="number" min="0" step="10000" data-ins-coverage="' + esc(row.p.id) + '" value="' + (q.coverage_hkd || "") + '" placeholder="待确认" /></td>' +
               '<td class="num">' + (row.cpm === null ? "—" : money(row.cpm)) + "</td></tr>"
