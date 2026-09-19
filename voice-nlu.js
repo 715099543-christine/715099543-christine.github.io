@@ -268,6 +268,22 @@
     var currency = parseCurrency(t) || (meta && meta.currency ? { code: meta.currency } : null);
     var cc = currency ? currency.code : (meta ? meta.currency : null);
 
+    /* —— 档案名称（「就叫我们家 2026」「名字叫李家的家」）。
+       必须在金额/年份规则之前：名称句常混入年份或金额，
+       晚探测会被拆成 unclassified_amount，导致「档案名称」
+       这一问永远没有语音入口可答（Round 55 恢复后测出）。 */
+    var tTrim = String(t).replace(/[\uff0c,\u3002.\uff01!\uff1f?~\uff5e\u3001\s]+$/g, "").trim();
+    var tLead = tTrim.replace(/^[\s\uff1a:\u300c\u300d“”‘’]+/, "");
+    var nameRe = /(?:\u5c31?\u53eb|\u540d\u5b57(?:\u53eb|\u662f|\u4e3a)|\u6863\u6848(?:\u53eb|\u540d\u5b57\u662f|\u540d(?:\u5b57)?\u4e3a)|\u8d77\u540d|\u547d\u540d\u4e3a?|\u53d6\u540d\u4e3a?|\u6539\u6210|\u6539\u53eb|\u6635\u79f0(?:\u53eb|\u662f))\s*(.+?)(?:\u5427|\u4e86|\u54e6|\u54c8|\u5c31\u597d|\u5c31\u884c|\u597d\u4e0d\u597d|\u53ef\u4ee5\u5417)?$/;
+    var nameMatch = nameRe.exec(tLead);
+    if (nameMatch) {
+      var rawName = String(nameMatch[1] || "").trim()
+        .replace(/(?:\u5427|\u4e86|\u54e6|\u54c8|\u5c31\u597d|\u5c31\u884c|\u597d\u4e0d\u597d|\u53ef\u4ee5\u5417|\u5bf9\u5427)$/g, "").trim();
+      if (rawName && rawName.length >= 1 && rawName.length <= 40 && !/^(\u5bf9|\u662f|\u597d\u7684|\u53ef\u4ee5|\u884c|\u55ef|\u6ca1\u95ee\u9898|\u786e\u5b9a)$/.test(rawName)) {
+        out.push({ type: "profile_name", name: rawName, raw: String(t) });
+      }
+    }
+
     /* —— 成员：人数（全局匹配，支持「两个大人一个孩子」一次报全） —— */
     var adults = null, children = null;
     var countRe = /(?:有|一共|总共|家里)?\s*((?:\d+)|\d*[一两两三四五六七八九十]+(?:个)?个?)\s*(大人|成人|成年人|小孩|孩子|子女|娃|老人)/g;
@@ -464,6 +480,8 @@
   function echoFact(fact) {
     if (!fact) return "";
     switch (fact.type) {
+      case "profile_name":
+        return "档案名称「" + String(fact.name || "") + "」";
       case "members":
         return (fact.adults !== null ? fact.adults + " 位大人" : "") + (fact.children !== null ? (fact.adults !== null ? "、" : "") + fact.children + " 位受抚养成员" : "");
       case "member_age":
@@ -627,6 +645,11 @@
             });
           }
         });
+        break;
+      }
+      case "profile_name": {
+        var nm = String(fact.name || "").trim().slice(0, 40);
+        if (nm) draft.profile_id = nm;
         break;
       }
       case "education": {

@@ -29,6 +29,8 @@
     history: [],          /* [{who:"bot"|"user", text}] */
     speech: null,         /* SpeechRecognition 实例 */
     busy: false,
+    pendingName: null,    /* 等待用户确认档案名称 {next, proposed} */
+    pendingRun: false,    /* 说过「运行家庭分析」——缺项补齐后自动运行（Round 55） */
   };
 
   function bot(text) { appendLine("bot", text); }
@@ -157,6 +159,11 @@
       return;
     }
 
+    if (state.pendingName) {
+      takeNameReply(t);
+      return;
+    }
+
     if (state.pending) {
       if (NLU.isConfirm(t)) {
         confirmPending();
@@ -213,6 +220,10 @@
     markAskedAfterApply(q.questionKey, facts);
     renderSummary();
     bot("已记录。");
+    if (state.pendingRun) {
+      maybeCompleteAnalysis();
+      return;
+    }
     askNext();
   }
 
@@ -381,14 +392,18 @@
 
   function saveAndExit() {
     if (state.busy) return;
-    state.busy = true;
-    status("正在保存到云端…", "busy");
     if (!cloudReady()) {
       status("需要先登录", "warn");
       bot("家庭档案要登录云端账号后才能加密保存。请回到顶部「我的家庭CFO」注册或登录，然后点「继续语音建档」接着填。");
-      state.busy = false;
       return;
     }
+    ensureProfileName(commitSaveAndExit);
+  }
+
+  function commitSaveAndExit() {
+    if (state.busy) return;
+    state.busy = true;
+    status("正在保存到云端…", "busy");
     syncFormWithDraft();
     Promise.resolve(saveCurrentProfile())
       .then(function (result) {
@@ -415,26 +430,120 @@
       return;
     }
     syncFormWithDraft();
-    var defer = saveCurrentProfile;
-    Promise.resolve(defer())
+    ensureProfileName(commitRunAnalysis);
+  }
+
+  /* Round 55 修复定位（r54 留缺口 2）：
+     以前「运行家庭分析」在缺项时进入逐项补问，
+     第一问是「档案名称」 —— 而 NLU 当时并没有名称提取规则，
+     换设备恢复后语音建档的档案名称恒为空，
+     导致这条命令永远卡在问名，引擎从未启动。
+     现在：先给可确认的默认名（用户回「对」或直接说新名），
+     保存后若仍缺必填项，一个一个补问，补齐后自动运行。 */
+  function commitRunAnalysis() {
+    if (state.busy) return;
+    state.busy = true;
+    status("正在保存并准备分析…", "busy");
+    syncFormWithDraft();
+    Promise.resolve(saveCurrentProfile())
       .then(function (result) {
+        state.busy = false;
         if (result === false) throw new Error("保存被取消，请先补全必要信息。");
+        if (typeof showStep === "function") showStep(8);
+        var missing = typeof validate === "function" ? validate() : [];
         var runBtn = $("w-run");
-        if (runBtn && !runBtn.classList.contains("hidden")) {
+        if (!missing.length && runBtn && !runBtn.classList.contains("hidden")) {
           status("正在运行家庭分析…", "busy");
           bot("档案已保存，正在用你的真实数据运行家庭分析，稍等片刻。");
           runBtn.click();
-        } else {
-          if (typeof showStep === "function") showStep(8);
-          status("需要先确认向导数据", "warn");
-          bot("档案已保存。部分必要信息还缺，我继续问你：");
-          state.asked = askedFromDraft(state.draft);
-          askNext();
+          return;
         }
+        state.asked = askedFromDraft(state.draft);
+        state.pendingRun = true;
+        status("还差几项必填", "warn");
+        bot("档案已保存。部分必要信息还缺，我继续问你：");
+        askNext();
       })
       .catch(function (err) {
-        bot("运行分析前保存失败：" + (err && err.message ? err.message : String(err)));
+        state.busy = false;
+        bot("运行分析前保存失败：" + (err && err.message ? err.message : String(err)) + "。可以再说一遍「运行家庭分析」重试。");
       });
+  }
+
+  /* 保存/运行前的名称闸门：语音建档全程可以不回答「档案名称」，
+     但该字段是运行与云端的必填主键。这里给出可确认的默认名，
+     用户回「对」即采用，或直接说新名字；绝不静默虚构。 */
+  function defaultProfileName() {
+    var fs = window.VerityFamilyStore;
+    var snap = fs && typeof fs.snapshot === "function" ? fs.snapshot() : null;
+    var who = snap && snap.user ? String(snap.user.display_name || "").trim() : "";
+    var base = who && who.length >= 2 && who.length <= 12 && who.indexOf("@") < 0 ? who : "我们家";
+    return base + " " + new Date().getFullYear();
+  }
+
+  function ensureProfileName(next) {
+    if ((state.draft.profile_id || "").trim()) { next(); return; }
+    if (state.pendingName) {
+      if (state.pendingName.next !== next) state.pendingName.next = next;
+      bot("请先确认档案名称：回复「对」用我建议的名字，或直接说个新名字。");
+      return;
+    }
+    var proposed = defaultProfileName();
+    state.pendingName = { next: next, proposed: proposed };
+    status("需要先确认档案名称", "warn");
+    bot("这份档案还没有名字。我建议用「" + proposed + "」：回复「对」就按这个名称保存；也可以直接告诉我新名字，比如「李家 2026」。");
+  }
+
+  function takeNameReply(text) {
+    var t = String(text || "").trim();
+    var pending = state.pendingName;
+    if (!pending) return false;
+    var name = null;
+    if (NLU.isConfirm(t)) {
+      name = pending.proposed;
+    } else {
+      var parsed = NLU.parseUtterance(t, { currency: (state.draft && state.draft.currency) || "CNY" });
+      var facts = (parsed && parsed.facts) || [];
+      for (var i = 0; i < facts.length; i++) {
+        if (facts[i].type === "profile_name") { name = facts[i].name; break; }
+      }
+      if (!name) {
+        var cleaned = t
+          .replace(/^(就?叫|名字(?:叫|是)|档案(?:叫|名字是)|起名|命名为?|取名为?|改成|改叫)/, "")
+          .replace(/[，,。.！!？?、吧了哦哈]+$/g, "")
+          .trim();
+        if (cleaned && !NLU.isConfirm(cleaned) && !/^(不对|不是|算了|跳过|稍后)/.test(cleaned)) name = cleaned;
+      }
+    }
+    if (!name) {
+      bot("没听清档案名称。回复「对」用我建议的名字，或直接说个新名字，比如「李家 2026」。");
+      return true;
+    }
+    name = String(name).trim().slice(0, 40);
+    state.draft.profile_id = name;
+    if (state.asked.indexOf("profile_id") < 0) state.asked.push("profile_id");
+    state.pendingName = null;
+    syncFormWithDraft();
+    renderSummary();
+    bot("档案名称已确认：「" + name + "」。");
+    pending.next();
+    return true;
+  }
+
+  /* 说过「运行家庭分析」后每次确认一条事实，就检查一次必填项：
+     齐了立即自动运行引擎，不再要求用户凍多说一次。 */
+  function maybeCompleteAnalysis() {
+    syncFormWithDraft();
+    var missing = typeof validate === "function" ? validate() : [];
+    var runBtn = $("w-run");
+    if (!missing.length && runBtn && !runBtn.classList.contains("hidden")) {
+      state.pendingRun = false;
+      status("正在运行家庭分析…", "busy");
+      bot("信息齐了，正在用你的真实数据运行家庭分析，稍等片刻。");
+      runBtn.click();
+      return;
+    }
+    askNext();
   }
 
   /* ------------------------------------------------------------ 语音识别（普通话/粤语 + 文字备用） */
@@ -445,6 +554,28 @@
     return SpeechRecognitionImpl
       ? "支持语音输入（普通话/粤语），也可以直接打字。"
       : "当前浏览器不支持语音识别，已切换为文字输入：把你想说的话打进输入框即可。";
+  }
+
+  /* 无语音能力时把用户明确引导到文字输入：高亮输入行 + 聚焦，避免「点击无反应」 */
+  function after(ms, fn) {
+    if (typeof window !== "undefined" && typeof window.setTimeout === "function") window.setTimeout(fn, ms);
+  }
+
+  function guideToTextInput() {
+    var box = $("voice-input");
+    if (!box) return;
+    var wrap = null;
+    try {
+      wrap = (typeof box.closest === "function" && box.closest(".voice-input-row")) || box.parentNode || null;
+    } catch (ignored) { wrap = box.parentNode || null; }
+    if (wrap && wrap.classList) {
+      wrap.classList.add("voice-input-nudge");
+      after(1800, function () { wrap.classList.remove("voice-input-nudge"); });
+    }
+    if (typeof box.focus === "function") box.focus();
+    try {
+      if (typeof box.setSelectionRange === "function") box.setSelectionRange(box.value.length, box.value.length);
+    } catch (ignored) { /* noop */ }
   }
 
   function stopListening() {
@@ -473,8 +604,10 @@
 
   function startListening() {
     if (!SpeechRecognitionImpl) {
-      bot("这个浏览器不支持语音识别，请用输入框打字告诉我。");
-      $("voice-input").focus();
+      /* 无语音识别能力时也必须有明确反馈：提示 + 高亮输入框 + 聚焦，绝不静默 */
+      bot("这个浏览器不支持语音识别，已切换为文字输入：把成员、收支、资产、负债、保险、教育或目标打进下面的输入框，我会逐项识别。");
+      status("语音不可用，请用文字输入", "warn");
+      guideToTextInput();
       return;
     }
     if (state.listening) {
@@ -594,7 +727,15 @@
     var hint = $("voice-support-hint");
     if (hint) hint.textContent = supportText();
     var mic = $("voice-mic");
-    if (mic && !SpeechRecognitionImpl) mic.disabled = true;
+    if (mic && !SpeechRecognitionImpl) {
+      /* 不真正 disabled（disabled 会吞掉点击、导致点击无任何反馈）；
+         改为软禁用语义 + 点击引导文字输入 */
+      mic.setAttribute("aria-disabled", "true");
+      mic.setAttribute("aria-label", "当前浏览器不支持语音识别，点击改用文字输入");
+      mic.dataset.unsupported = "true";
+      mic.title = "当前浏览器不支持语音识别，点击可切换到文字输入";
+      mic.classList.add("voice-mic-fallback");
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
