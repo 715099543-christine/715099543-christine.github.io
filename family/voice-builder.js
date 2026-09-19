@@ -730,6 +730,14 @@
   function init() {
     bind();
     setLang(window.VerityVoiceLang || "zh-CN");
+    /* Round 57：暴露「语音面板已就绪」标记。family-boot 是异步串行加载脚本的，
+       脚本就位前点击「开始语音建立家庭档案」不会绑定任何行为；自动化验收与
+       前端自检都需要一个确定的就绪信号，而不是靠 sleep 猜。 */
+    try {
+      if (document.documentElement && document.documentElement.classList) {
+        document.documentElement.classList.add("voice-builder-ready");
+      }
+    } catch (ignored) { /* noop */ }
     var hint = $("voice-support-hint");
     if (hint) hint.textContent = supportText();
     var mic = $("voice-mic");
