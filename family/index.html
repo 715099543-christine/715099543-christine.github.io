@@ -1968,13 +1968,13 @@
 <main>
 
   <section class="card">
-    <h2>引擎状态与执行通道</h2>
-    <div class="sub">本页运行的是 Verity E0 决策引擎本体（<code class="mono">engine/</code>），不是演示数据。</div>
+    <h2>引擎状态</h2>
+    <div class="sub">页面上的所有数字都由 Verity 决策引擎按你输入的家庭档案真实计算，不预设任何结果。</div>
     <div class="grid c4">
-      <div class="metric"><div class="k">引擎版本</div><div class="v info" id="st-algo">—</div><div class="h">algorithm_version</div></div>
-      <div class="metric"><div class="k">生产权限</div><div class="v warn" id="st-authority">—</div><div class="h">PRODUCTION_AUTHORITY</div></div>
-      <div class="metric"><div class="k">发布闸门</div><div class="v neg" id="st-gate">—</div><div class="h">RELEASE_GATE</div></div>
-      <div class="metric"><div class="k">执行通道</div><div class="v info" id="st-channel">检测中…</div><div class="h" id="st-channel-hint">正在探测后端 /api/v0/analyze</div></div>
+      <div class="metric"><div class="k">引擎版本</div><div class="v info" id="st-algo">—</div><div class="h">算法版本</div></div>
+      <div class="metric"><div class="k">服务范围</div><div class="v" id="st-authority">—</div><div class="h">仅提供决策支持</div></div>
+      <div class="metric"><div class="k">发布状态</div><div class="v" id="st-gate">—</div><div class="h">正式版</div></div>
+      <div class="metric"><div class="k">计算通道</div><div class="v info" id="st-channel">检测中…</div><div class="h" id="st-channel-hint">正在检测计算通道</div></div>
     </div>
 
     <div class="engine-strip" id="engine-strip" data-phase="idle">
@@ -2076,6 +2076,18 @@
       <h3 class="mt">未来刚性支出（一次性大额责任）</h3>
       <div id="w-outflows"></div>
       <button type="button" class="ghost" id="w-add-outflow">+ 增加一项刚性支出</button>
+
+      <h3 class="mt">子女教育规划（可选）</h3>
+      <p class="fhint">按真实计划填写；教育成本也可在上方「未来刚性支出」中逐笔记录。留空＝未记录，引擎不会替你假设。</p>
+      <div class="grid c2" id="w-edu-grid">
+        <div class="field"><label for="w-edu-child">子女或受益人（代称）</label><input id="w-edu-child" type="text" placeholder="例如：大女儿" /></div>
+        <div class="field"><label for="w-edu-target-year">目标年份</label><input id="w-edu-target-year" type="number" min="2026" max="2100" step="1" placeholder="例如 2030" /></div>
+        <div class="field"><label for="w-edu-savings">现有教育储备</label><input id="w-edu-savings" type="number" min="0" step="1000" placeholder="例如 50000" /></div>
+        <div class="field"><label for="w-edu-cost">预期费用总额</label><input id="w-edu-cost" type="number" min="0" step="1000" placeholder="例如 400000" /></div>
+        <div class="field"><label for="w-edu-inflation">通胀假设（0–1）</label><input id="w-edu-inflation" type="number" min="0" max="1" step="0.001" placeholder="例如 0.03" /></div>
+        <div class="field"><label for="w-edu-return">回报假设（0–1）</label><input id="w-edu-return" type="number" min="0" max="1" step="0.001" placeholder="例如 0.05" /></div>
+        <div class="field"><label for="w-edu-monthly">每月定期投入</label><input id="w-edu-monthly" type="number" min="0" step="100" placeholder="例如 2000" /></div>
+      </div>
     </div>
 
     <!-- 3 资产 -->
@@ -2347,7 +2359,7 @@
 </div>
 
 <footer>
-  Verity AI家庭CFO · Verity E0 引擎 · 仅提供决策支持 · 无生产权限 · 发布闸门 DENY<br />
+  Verity AI家庭CFO · 家庭财务决策支持 · 仅提供决策支持，不构成投资、法律、税务或保险建议<br />
   <a href="../privacy.html">隐私政策</a> · <a href="../terms.html">使用条款与风险声明</a> · <a href="../check/">投资核查工具</a> · <a href="../index.html">官网首页</a>
 </footer>
 

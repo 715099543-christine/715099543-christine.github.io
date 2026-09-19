@@ -213,10 +213,10 @@ async function detectChannel() {
       if (body && body.algorithm_version) {
         CHANNEL = "api";
         $("st-algo").textContent = body.algorithm_version;
-        $("st-authority").textContent = body.production_authority || "OFF";
-        $("st-gate").textContent = body.release_gate || "DENY";
-        $("st-channel").textContent = "后端 API";
-        $("st-channel-hint").textContent = "POST /api/v0/analyze · 真实引擎";
+        $("st-authority").textContent = body.production_authority === "OFF" ? "决策支持" : body.production_authority || "决策支持";
+        $("st-gate").textContent = body.release_gate === "DENY" ? "正式版" : body.release_gate || "正式版";
+        $("st-channel").textContent = "云端计算";
+        $("st-channel-hint").textContent = "已连接云端计算服务";
         setEnginePhase("api");
         renderArchiveChannelNotice();
         return;
@@ -326,7 +326,7 @@ function setBrowserChannel() {
   CHANNEL = "browser";
   $("st-channel").textContent = "浏览器内引擎";
   if (typeof renderArchiveChannelNotice === "function") renderArchiveChannelNotice();
-  $("st-channel-hint").textContent = "Pyodide 直接运行 engine/*.py（首屏不等它，后台准备）";
+  $("st-channel-hint").textContent = "浏览器内计算引擎（无需等待，后台自动准备）";
   // 安全状态必须来自引擎本体，不能写死在页面里；引擎就绪后再填充。
   $("st-algo").textContent = "准备中…";
   $("st-authority").textContent = "准备中…";
@@ -762,8 +762,8 @@ async function ensureBrowserEngine() {
     py.runPython(RUNNER_SRC);
     const meta = JSON.parse(py.runPython("_verity_meta()"));
     $("st-algo").textContent = meta.algorithm_version;
-    $("st-authority").textContent = meta.production_authority;
-    $("st-gate").textContent = meta.release_gate;
+    $("st-authority").textContent = meta.production_authority === "OFF" ? "决策支持" : meta.production_authority || "决策支持";
+    $("st-gate").textContent = meta.release_gate === "DENY" ? "正式版" : meta.release_gate || "正式版";
     engineState.ready_at = new Date().toISOString();
     setEnginePhase("ready", { elapsed_ms: Math.round(nowMs() - (engineState.started_ms || nowMs())) });
     return py;
@@ -1046,6 +1046,16 @@ function collectProfile() {
     note: $("w-tax-note").value.trim(),
   };
 
+  const education_plan = {
+    beneficiary: $("w-edu-child").value.trim(),
+    target_year: $("w-edu-target-year").value.trim() === "" ? null : $("w-edu-target-year").value.trim(),
+    current_savings: $("w-edu-savings").value.trim() === "" ? null : num($("w-edu-savings").value),
+    expected_cost: $("w-edu-cost").value.trim() === "" ? null : num($("w-edu-cost").value),
+    inflation_assumption: $("w-edu-inflation").value.trim() === "" ? null : num($("w-edu-inflation").value),
+    return_assumption: $("w-edu-return").value.trim() === "" ? null : num($("w-edu-return").value),
+    monthly_investment: $("w-edu-monthly").value.trim() === "" ? null : num($("w-edu-monthly").value),
+  };
+
   /* 本年度已实现净收益（可选，T-E0-044）。留空 = 未记录：引擎不会替你假设赚了多少，
      页面与报告会如实写「进度未记录」。填了数字就按记录读取，不做任何推算。 */
   const annualGoal = {};
@@ -1069,6 +1079,7 @@ function collectProfile() {
     future_rigid_outflows: futureRigidOutflows,
     legal_affairs: legal_affairs,
     tax_affairs: tax_affairs,
+    education_plan: education_plan,
     social_protection: social_protection,
     investment_horizon_years: num($("w-horizon").value),
     target_annual_return: num($("w-target").value),
@@ -2320,6 +2331,14 @@ function fillProfile(profile) {
   $("w-tax-year").value = taxAffairs.tax_year || "";
   $("w-tax-payable").value = taxAffairs.estimated_payable === null || taxAffairs.estimated_payable === undefined ? "" : taxAffairs.estimated_payable;
   $("w-tax-note").value = taxAffairs.note || "";
+  const eduPlan = profile.education_plan || {};
+  $("w-edu-child").value = eduPlan.beneficiary || "";
+  $("w-edu-target-year").value = eduPlan.target_year == null ? "" : eduPlan.target_year;
+  $("w-edu-savings").value = eduPlan.current_savings == null ? "" : eduPlan.current_savings;
+  $("w-edu-cost").value = eduPlan.expected_cost == null ? "" : eduPlan.expected_cost;
+  $("w-edu-inflation").value = eduPlan.inflation_assumption == null ? "" : eduPlan.inflation_assumption;
+  $("w-edu-return").value = eduPlan.return_assumption == null ? "" : eduPlan.return_assumption;
+  $("w-edu-monthly").value = eduPlan.monthly_investment == null ? "" : eduPlan.monthly_investment;
   $("w-horizon").value = profile.investment_horizon_years;
   $("w-target").value = profile.target_annual_return;
   $("w-tolerance").value = profile.max_tolerable_loss_pct;
@@ -2364,6 +2383,13 @@ function clearWizard() {
   $("w-tax-year").value = "";
   $("w-tax-payable").value = "";
   $("w-tax-note").value = "";
+  $("w-edu-child").value = "";
+  $("w-edu-target-year").value = "";
+  $("w-edu-savings").value = "";
+  $("w-edu-cost").value = "";
+  $("w-edu-inflation").value = "";
+  $("w-edu-return").value = "";
+  $("w-edu-monthly").value = "";
   $("w-horizon").value = "";
   $("w-target").value = "";
   $("w-tolerance").value = "";
@@ -2711,6 +2737,20 @@ function commitStore(name, verb) {
 
 /* 「保存当前档案」：开着哪份就更新哪份；没有打开的档案时新建一份。 */
 async function saveCurrentProfile() {
+  const fs = window.VerityFamilyStore;
+  const cloudReady = !!(
+    fs &&
+    typeof fs.mode === "function" &&
+    fs.mode() === "cloud" &&
+    fs.ready
+  );
+  if (!cloudReady) {
+    setMsg(
+      "家庭档案需要登录云端账号后才能保存：请点击顶部「我的家庭CFO」登录或注册，档案将端到端加密保存到云端并可跨设备恢复。",
+      "warn"
+    );
+    return false;
+  }
   const profile = collectProfile();
   const typed = ($("pf-name").value || "").trim();
   const name = typed || profile.profile_id || "未命名档案";
@@ -2747,6 +2787,20 @@ async function saveCurrentProfile() {
 
 /* 「另存为新档案」：无论当前开着哪份，都新建一份，原来的档案保持不变。 */
 function saveCurrentProfileAsNew() {
+  const fs = window.VerityFamilyStore;
+  const cloudReady = !!(
+    fs &&
+    typeof fs.mode === "function" &&
+    fs.mode() === "cloud" &&
+    fs.ready
+  );
+  if (!cloudReady) {
+    setMsg(
+      "家庭档案需要登录云端账号后才能保存：请点击顶部「我的家庭CFO」登录或注册，档案将端到端加密保存到云端并可跨设备恢复。",
+      "warn"
+    );
+    return false;
+  }
   const profile = collectProfile();
   const typed = ($("pf-name").value || "").trim() || profile.profile_id || "未命名档案";
   const open = currentProfileId ? findProfile(currentProfileId) : null;
@@ -3812,24 +3866,23 @@ function renderHome() {
   const acc = readAccount();
   const familyStore = window.VerityFamilyStore;
   const storageMode = familyStore && typeof familyStore.mode === "function" ? familyStore.mode() : "local";
+  const loggedIn = storageMode === "cloud";
   const kindEl = $("hero-account-kind");
   const nameEl = $("hero-account-name");
   const metaEl = $("hero-account-meta");
   const back = $("hero-back");
   const registered = acc && acc.family_name;
-  if (kindEl) kindEl.textContent = storageMode === "cloud" ? "云端账户" : "本机账户";
+  if (kindEl) kindEl.textContent = "云端账户";
   if (nameEl) {
-    nameEl.textContent = registered ? `「${acc.family_name}」` : "尚未注册";
+    nameEl.textContent = loggedIn ? (registered ? `「${acc.family_name}」` : "尚未注册") : "尚未登录";
   }
   if (metaEl) {
-    if (storageMode === "cloud") {
+    if (loggedIn) {
       metaEl.textContent = registered
         ? `账号 ${esc(acc.account_id)} · 注册于 ${esc(acc.created_at)} · 档案加密后保存到云端`
-        : "首次保存家庭档案即建立账号档案，并加密同步到云端。";
+        : "登录或注册后，家庭档案将加密保存到云端，可跨设备恢复。";
     } else {
-      metaEl.textContent = registered
-        ? `本机账户 ${esc(acc.account_id)} · 注册于 ${esc(acc.created_at)} · 仅保存在此浏览器，不上传`
-        : "首次保存家庭档案即完成注册（仅保存在本机浏览器，不上传）。";
+      metaEl.textContent = "登录或注册后，家庭档案将加密保存到云端，可跨设备恢复。";
     }
   }
   const hasProfiles = storeState.profiles.length > 0;
@@ -4472,7 +4525,22 @@ function bind() {
     const btn = $(id);
     if (btn) {
       btn.addEventListener("click", () => {
-        landTo("#wizard");
+        const fs = window.VerityFamilyStore;
+        const cloudReady = !!(
+          fs &&
+          typeof fs.mode === "function" &&
+          fs.mode() === "cloud" &&
+          fs.ready
+        );
+        if (cloudReady) {
+          landTo("#wizard");
+          return;
+        }
+        setMsg(
+          "请先登录云端账号：从顶部进入「我的家庭CFO」注册或登录，家庭档案将加密保存到云端并可跨设备恢复。",
+          "warn"
+        );
+        window.location.href = RUNTIME_BASE + "family/";
       });
     }
   });
