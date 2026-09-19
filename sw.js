@@ -15,26 +15,26 @@
  */
 
 /* 唯一来源 web/version.json；改这里必须同步那里（tests/test_version_sot.py 守住）。 */
-const PRODUCT_VERSION = "e0.27.2";
-const CACHE_SCHEMA = "r49-p0-cloud-save-fix";
+const PRODUCT_VERSION = "e0.27.3";
+const CACHE_SCHEMA = "r49-p0-hashed-assets";
 const SHELL_CACHE = `verity-zh-shell-v${PRODUCT_VERSION}-${CACHE_SCHEMA}`;
 
 const SHELL_ASSETS = [
   "./index.html",
-  "./landing.css",
-  "./install-prompt.js",
+  "./landing.e0.27.3.css",
+  "./install-prompt.e0.27.3.js",
   "./family/index.html",
-  "./family/family.css",
-  "./family/family-api.js",
-  "./family/family-boot.js",
+  "./family/family.e0.27.3.css",
+  "./family/family-api.e0.27.3.js",
+  "./family/family-boot.e0.27.3.js",
   "./family/manifest.webmanifest",
-  "./family-insurance.js",
-  "./family-insurance.css",
+  "./family-insurance.e0.27.3.js",
+  "./family-insurance.e0.27.3.css",
   "./hk-insurance-products.json",
-  "./zh.js",
-  "./zh.css",
-  "./styles.css",
-  "./verity-digest.js",
+  "./zh.e0.27.3.js",
+  "./zh.e0.27.3.css",
+  "./styles.e0.27.3.css",
+  "./verity-digest.e0.27.3.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
