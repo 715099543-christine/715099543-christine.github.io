@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#070b16" />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="../icons/icon-192.png" />
+<title>Verity 真机验收台 · 华为 / Android / iPhone</title>
+<style>
+  :root{--bg:#070b16;--card:#0f1728;--line:#243352;--ink:#e9eefb;--sub:#9fb0d0;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--brand:#5b9dff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Noto Sans SC","Microsoft YaHei",sans-serif;padding:16px 14px 56px;max-width:760px;margin:0 auto}
+  h1{font-size:21px;margin:6px 0 4px}
+  h2{font-size:17px;margin:0 0 10px}
+  p.sub{color:var(--sub);font-size:13.5px;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(36,51,82,.6);font-size:14px}
+  .row:last-child{border-bottom:0}
+  .row b{font-weight:600;text-align:right;word-break:break-all;max-width:62%}
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--sub)}
+  .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+  button{font:inherit;min-height:46px;padding:11px 15px;border-radius:11px;border:1px solid var(--line);background:#16223a;color:var(--ink);cursor:pointer}
+  button:active{transform:translateY(1px)}
+  button[disabled]{opacity:.45}
+  button.primary{background:var(--brand);border-color:var(--brand);color:#04101f;font-weight:700}
+  button.record{background:#3b1230;border-color:#7b2352}
+  .btns{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+  .btns button{flex:1 1 auto;min-width:92px}
+  #lvl{height:10px;background:#0a1424;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:12px}
+  #lvl > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#34d399,#5b9dff)}
+  textarea{width:100%;min-height:96px;background:#0a1424;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:11px;font:inherit;font-size:15px}
+  label.chk{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(36,51,82,.6);font-size:14.5px}
+  label.chk:last-of-type{border-bottom:0}
+  label.chk input{width:24px;height:24px;min-width:24px;margin-top:2px;accent-color:var(--brand)}
+  .note{color:var(--sub);font-size:12.5px;margin-top:10px}
+  ol.flow{margin:6px 0 0 18px;padding:0;color:var(--sub);font-size:13.5px}
+  code{background:#0a1424;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  a.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--brand);border-radius:11px;color:var(--brand);text-decoration:none;font-size:14.5px}
+  #result{white-space:pre-wrap;word-break:break-all;background:#0a1424;border:1px solid var(--line);border-radius:11px;padding:11px;font-size:12px;max-height:260px;overflow:auto;margin-top:12px}
+</style>
+</head>
+<body>
+<h1>Verity 真机验收台</h1>
+<p class="sub">在华为 / Android / iPhone 手机上打开本页，先做设备体检与麦克风真采，再照清单走一遍闭环。本页不要求输入密码，不上传录音。</p>
+
+<div class="card">
+  <h2>一、设备与环境</h2>
+  <div id="env"></div>
+  <div class="btns"><button id="btn-env">重新体检</button></div>
+</div>
+
+<div class="card">
+  <h2>二、麦克风与普通话识别真采</h2>
+  <p class="sub" id="mic-hint">点「开始录音」，用普通话连续说一遍家庭成员、收入、支出、资产、负债、保险、教育、目标。</p>
+  <div id="lvl"><i></i></div>
+  <div class="btns">
+    <button id="btn-mic" class="primary" style="min-width:120px">开始录音</button>
+    <button id="btn-pause" disabled>暂停</button>
+    <button id="btn-stop" disabled>停止</button>
+    <button id="btn-cancel" disabled>取消</button>
+    <button id="btn-redo" disabled>重录</button>
+  </div>
+  <div id="mic-stat" class="note">尚未开始。</div>
+  <p class="sub" style="margin-top:14px">识别文字（可直接修改，改完即为准确文本）：</p>
+  <textarea id="transcript" placeholder="识别结果会出现在这里；若本机浏览器不支持语音识别，请在这里手动输入同一段描述。"></textarea>
+  <div class="note">原始录音只在内存里处理，<b>不保存、不上传、不写入日志、不用于训练</b>；离开本页即销毁。识别文字属家庭财务信息，默认<b>不</b>包含在验收结果里。</div>
+</div>
+
+<div class="card">
+  <h2>三、闭环验收清单</h2>
+  <p class="sub">逐条在手机上做完再勾。建档、保存、恢复与计算都在家庭CFO控制台里完成。</p>
+  <p style="margin:0 0 6px"><a id="link-family" class="chip" href="/family/">前往 /family/ 家庭CFO控制台</a></p>
+  <div id="list"></div>
+  <div class="note">勾选状态只存在本机浏览器（localStorage），用于断点续测，不含任何家庭数据。</div>
+</div>
+
+<div class="card">
+  <h2>四、验收结果</h2>
+  <div id="summary" class="note">还没有可导出的结果。</div>
+  <div class="btns">
+    <button id="btn-copy" class="primary">复制结果</button>
+    <button id="btn-share">系统分享</button>
+    <button id="btn-download">下载 JSON</button>
+    <button id="btn-reset">清空重来</button>
+  </div>
+  <div id="result" hidden></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "verity.devicecheck.v1";
+  var SpeechImpl = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var steps = [
+    { id: "open", text: "能在本机浏览器打开正式站点首页与 /family/（无拦截页、无 403/挑战页）" },
+    { id: "register", text: "用邮箱注册新账号成功，能进入家庭CFO控制台" },
+    { id: "login", text: "退出后重新登录成功" },
+    { id: "build", text: "点麦克风连续口述家庭情况（不支持识别的机型走文字输入）" },
+    { id: "echo", text: "逐项看到「原话 / 识别结果 / 缺失项 / 异常项」" },
+    { id: "confirm", text: "修改或确认字段后才允许保存" },
+    { id: "save", text: "保存成功，显示同步状态（云端为唯一权威）" },
+    { id: "reload", text: "关闭页面重开，档案仍在（自动恢复）" },
+    { id: "relogin", text: "退出登录后重新登录，档案跨会话恢复且字段一致" },
+    { id: "compute", text: "核心计算可运行：判定 / 现金流 / 资产负债 / 生存底线 / 风险排序" },
+    { id: "modules", text: "成员、收支、资产、负债、保险、教育、法律、税务入口均可点、可输入、可保存" },
+    { id: "export", text: "导出档案成功" },
+    { id: "import", text: "导入刚才的导出文件成功并恢复一致" },
+    { id: "delete", text: "删除档案后页面与云端均不再显示，可重新建档" },
+    { id: "pwa", text: "「添加到主屏幕」安装成功，独立窗口可离线打开" },
+    { id: "offline", text: "断网后给出明确提示，恢复网络后待同步队列自动补传" }
+  ];
+  var state = { v: 1, mic: null, steps: {}, startedAt: new Date().toISOString() };
+  try { var raw = localStorage.getItem(KEY); if (raw) { var p = JSON.parse(raw); if (p && p.steps) { state.steps = p.steps; state.startedAt = p.startedAt || state.startedAt; } } } catch (e) {}
+  var $ = function (id) { return document.getElementById(id); };
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, steps: state.steps, startedAt: state.startedAt })); } catch (e) {} }
+  function row(parent, k, v, cls) { var d = document.createElement("div"); d.className = "row"; var a = document.createElement("span"); a.textContent = k; a.style.color = "var(--sub)"; var b = document.createElement("b"); b.textContent = v; if (cls) b.className = cls; d.appendChild(a); d.appendChild(b); parent.appendChild(d); }
+  function has(n) { return n && n > 0 ? true : false; }
+  function isHuawei() { return /HarmonyOS|HuaweiBrowser|Huawei|HW-|HMSCore/i.test(navigator.userAgent); }
+  function isWechat() { return /MicroMessenger/i.test(navigator.userAgent); }
+  function isIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+  function standalone() { try { return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return navigator.standalone === true; } }
+
+  async function envCheck() {
+    var box = $("env"); box.innerHTML = "";
+    var ver = "-", sha = "-";
+    try { var r = await fetch("/version.json", { cache: "no-store" }); var j = await r.json(); ver = j.product_version || "-"; sha = (j.git_sha || "-").slice(0, 12); } catch (e) {}
+    row(box, "线上版本", ver + "  (" + sha + ")");
+    row(box, "设备/浏览器", navigator.userAgent);
+    row(box, "平台判定", (isHuawei() ? "华为/HarmonyOS " : "") + (isIOS() ? "iOS " : "") + (/Android/i.test(navigator.userAgent) ? "Android " : "") + (isWechat() ? "微信内置 " : "") || "桌面/其他", isHuawei() || isIOS() || /Android/i.test(navigator.userAgent) ? "ok" : "");
+    row(box, "窗口 / 像素比", window.innerWidth + "×" + window.innerHeight + " @" + (window.devicePixelRatio || 1));
+    row(box, "运行模式", standalone() ? "独立窗口（PWA 已安装）" : "浏览器标签页", standalone() ? "ok" : "");
+    row(box, "安全上下文", window.isSecureContext ? "HTTPS 安全" : "非安全上下文（麦克风不可用）", window.isSecureContext ? "ok" : "bad");
+    row(box, "麦克风接口", navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? "可用" : "不可用", navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? "ok" : "bad");
+    row(box, "语音识别（普通话）", SpeechImpl ? "可用" : "本机不支持 → 走文字输入", SpeechImpl ? "ok" : "warn");
+    row(box, "录音接口", window.MediaRecorder ? "可用" : "不可用", window.MediaRecorder ? "ok" : "warn");
+    row(box, "Service Worker", "serviceWorker" in navigator ? "支持" : "不支持", "serviceWorker" in navigator ? "ok" : "warn");
+    try { var st = await navigator.storage.estimate(); row(box, "可用存储", Math.round((st.quota - st.usage) / 1048576) + " MB / 共 " + Math.round(st.quota / 1048576) + " MB"); } catch (e) {}
+    try { var regs = await navigator.serviceWorker.getRegistrations(); row(box, "已注册 SW", String(regs.length) + " 个", has(regs.length) ? "ok" : "warn"); } catch (e) {}
+    try { var perm = await navigator.permissions.query({ name: "microphone" }); row(box, "麦克风授权", perm.state, perm.state === "granted" ? "ok" : perm.state === "denied" ? "bad" : "warn"); } catch (e) {}
+    state.env = { ua: navigator.userAgent, isHuawei: isHuawei(), isIOS: isIOS(), android: /Android/i.test(navigator.userAgent), wechat: isWechat(), standalone: standalone(), secure: window.isSecureContext, asr: !!SpeechImpl, mediaRecorder: !!window.MediaRecorder, version: ver, gitSha: sha, viewport: window.innerWidth + "x" + window.innerHeight, dpr: window.devicePixelRatio || 1 };
+    $("mic-hint").textContent = SpeechImpl
+      ? "点「开始录音」，用普通话连续说一遍家庭成员、收入、支出、资产、负债、保险、教育、目标。"
+      : "本机浏览器不提供语音识别接口：点「开始录音」仍会真实采集音频（用于验证麦克风授权与硬件），文字请直接输入到下方文本框。";
+    renderSummary();
+  }
+
+  var rec = null, stream = null, chunks = [], ctx = null, analyser = null, raf = 0, peak = 0, t0 = 0, timer = 0, speechObj = null, asrText = "", asrErr = "";
+  function levelLoop() { raf = requestAnimationFrame(levelLoop); try { var buf = new Uint8Array(analyser.frequencyBinCount); analyser.getByteTimeDomainData(buf); var m = 0; for (var i = 0; i < buf.length; i++) { m = Math.max(m, Math.abs(buf[i] - 128)); } peak = Math.max(peak, m); $("lvl").firstChild.style.width = Math.min(100, Math.round((m / 128) * 100)) + "%"; } catch (e) {} }
+  function fmt(ms) { return (ms / 1000).toFixed(1) + " 秒"; }
+  function setStat(text, cls) { var el = $("mic-stat"); el.textContent = text; el.className = "note" + (cls ? " " + cls : ""); }
+
+  async function startMic() {
+    peak = 0; chunks = []; asrText = ""; asrErr = "";
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStat("本机浏览器不提供麦克风接口，请改用下方文字输入完成建档。", "warn"); state.mic = { ok: false, reason: "no_getusermedia" }; renderSummary(); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+    } catch (err) {
+      var denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+      setStat(denied ? "麦克风授权被拒绝：请在浏览器地址栏/设置里允许麦克风后重试，或直接用下方文字输入。" : "麦克风启动失败（" + ((err && err.name) || "错误") + "）：请检查是否被其它应用占用。", "bad");
+      state.mic = { ok: false, reason: denied ? "permission_denied" : ((err && err.name) || "error") }; renderSummary(); return;
+    }
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); analyser = ctx.createAnalyser(); analyser.fftSize = 2048; ctx.createMediaStreamSource(stream).connect(analyser); levelLoop(); } catch (e) {}
+    if (window.MediaRecorder) { try { rec = new MediaRecorder(stream); rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); }; rec.start(250); } catch (e) { rec = null; } }
+    t0 = Date.now(); timer = setInterval(function () { $("mic-stat").textContent = "录音中… " + fmt(Date.now() - t0) + " · 峰值 " + peak; }, 250);
+    if (SpeechImpl) {
+      try {
+        speechObj = new SpeechImpl(); speechObj.lang = "zh-CN"; speechObj.continuous = true; speechObj.interimResults = true; speechObj.maxAlternatives = 1;
+        speechObj.onresult = function (ev) { var s = ""; for (var i = 0; i < ev.results.length; i++) { s += ev.results[i][0].transcript; } asrText = s; $("transcript").value = s; };
+        speechObj.onerror = function (ev) { asrErr = (ev && ev.error) || "unknown"; };
+        speechObj.onend = function () { if (state.mic && state.mic.recording) { try { speechObj.start(); } catch (e) {} } };
+        speechObj.start();
+      } catch (e) { asrErr = "start_failed"; }
+    }
+    state.mic = { ok: true, recording: true, paused: false, ms: 0, peak: 0, asr: !!SpeechImpl, bytes: 0 };
+    $("btn-mic").disabled = true; $("btn-pause").disabled = false; $("btn-stop").disabled = false; $("btn-cancel").disabled = false; $("btn-redo").disabled = true;
+    setStat("录音中… 用普通话说完整一段。", "ok");
+  }
+
+  function stopSpeech() { if (speechObj) { try { speechObj.onend = null; speechObj.stop(); } catch (e) {} speechObj = null; } }
+  function closeStream() { if (raf) cancelAnimationFrame(raf); raf = 0; if (timer) clearInterval(timer); timer = 0; stopSpeech(); try { if (ctx) ctx.close(); } catch (e) {} ctx = null; if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); } stream = null; }
+
+  function finish(kind) {
+    var ms = t0 ? Date.now() - t0 : 0;
+    if (rec && rec.state !== "inactive") { try { rec.stop(); } catch (e) {} }
+    closeStream();
+    $("btn-mic").disabled = false; $("btn-pause").disabled = true; $("btn-stop").disabled = true; $("btn-cancel").disabled = true; $("btn-redo").disabled = kind === "cancel";
+    $("lvl").firstChild.style.width = "0%";
+    if (kind === "cancel") { state.mic = { ok: false, reason: "cancelled" }; $("transcript").value = ""; setStat("已取消，录音与识别结果已丢弃。", "warn"); }
+    else {
+      var got = peak > 2;
+      state.mic = { ok: got, reason: got ? "ok" : "silent", ms: ms, peak: peak, asr: !!SpeechImpl, asrError: asrErr || null, recordedBytes: chunks.reduce(function (a, c) { return a + c.size; }, 0) };
+      setStat("已停止：时长 " + fmt(ms) + " · 峰值 " + peak + (got ? " · 麦克风真实采到声音" : " · 没有采到声音，请检查麦克风或重录") + (SpeechImpl ? (asrErr ? " · 识别中断(" + asrErr + ")，请重录或手动修正文字" : " · 已转文字") : " · 本机不支持识别，请手动输入文字"), got ? "ok" : "warn");
+    }
+    chunks = [];
+    renderSummary();
+  }
+
+  $("btn-mic").addEventListener("click", startMic);
+  $("btn-pause").addEventListener("click", function () {
+    if (!rec) { return; }
+    if (rec.state === "recording") { try { rec.pause(); } catch (e) {} stopSpeech(); if (timer) { clearInterval(timer); } state.mic.msp = Date.now() - t0; $("btn-pause").textContent = "继续"; setStat("已暂停。", "warn"); }
+    else if (rec.state === "paused") { try { rec.resume(); } catch (e) {} t0 = Date.now() - (state.mic.msp || 0); timer = setInterval(function () { $("mic-stat").textContent = "录音中… " + fmt(Date.now() - t0) + " · 峰值 " + peak; }, 250); if (SpeechImpl) { try { speechObj = new SpeechImpl(); speechObj.lang = "zh-CN"; speechObj.continuous = true; speechObj.onresult = function (ev) { var s = asrText; for (var i = ev.resultIndex; i < ev.results.length; i++) { s += ev.results[i][0].transcript; } asrText = s; $("transcript").value = s; }; speechObj.start(); } catch (e) {} } $("btn-pause").textContent = "暂停"; setStat("继续录音中…", "ok"); }
+  });
+  $("btn-stop").addEventListener("click", function () { finish("stop"); });
+  $("btn-cancel").addEventListener("click", function () { finish("cancel"); });
+  $("btn-redo").addEventListener("click", function () { $("transcript").value = ""; state.mic = null; setStat("可以重新录一遍。"); renderSummary(); });
+  $("transcript").addEventListener("input", renderSummary);
+
+  function renderList() {
+    var box = $("list"); box.innerHTML = "";
+    steps.forEach(function (s) {
+      var l = document.createElement("label"); l.className = "chk";
+      var i = document.createElement("input"); i.type = "checkbox"; i.checked = !!state.steps[s.id];
+      i.addEventListener("change", function () { state.steps[s.id] = i.checked; save(); renderSummary(); });
+      var t = document.createElement("span"); t.textContent = s.text;
+      var when = document.createElement("span"); when.className = "pill"; when.style.marginLeft = "auto"; when.textContent = i.checked ? "已通过" : "待测";
+      if (i.checked) when.className = "pill ok";
+      l.appendChild(i); l.appendChild(t); l.appendChild(when); box.appendChild(l);
+    });
+  }
+
+  function payload() {
+    var done = steps.filter(function (s) { return state.steps[s.id]; }).map(function (s) { return s.id; });
+    var missing = steps.filter(function (s) { return !state.steps[s.id]; }).map(function (s) { return s.id; });
+    return {
+      round: 58, kind: "real-device-acceptance", ts: new Date().toISOString(), startedAt: state.startedAt,
+      device: state.env || {}, mic: state.mic || { ok: false, reason: "not_tested" },
+      checklist: { total: steps.length, passed: done.length, passedIds: done, missingIds: missing },
+      verdict: missing.length === 0 && state.mic && state.mic.ok ? "PASS" : "INCOMPLETE",
+      note: "Transcript intentionally excluded (family financial data). No passwords, no tokens, no audio."
+    };
+  }
+  function renderSummary() {
+    var p = payload(); var box = $("summary");
+    box.innerHTML = "";
+    var lines = ["清单通过 " + p.checklist.passed + "/" + p.checklist.total, "麦克风真采：" + (state.mic ? (state.mic.ok ? "通过" : "未通过(" + (state.mic.reason || "") + ")") : "未测"), "结论：" + (p.verdict === "PASS" ? "闭环通过" : "尚未完成（缺 " + p.checklist.missingIds.length + " 项）")];
+    lines.forEach(function (t) { var d = document.createElement("div"); d.textContent = t; box.appendChild(d); });
+    $("btn-copy").disabled = p.checklist.passed === 0 && !state.mic;
+    $("btn-share").disabled = !navigator.share;
+  }
+  function text() {
+    var p = payload();
+    return "Verity 真机验收结果\n设备：" + (p.device.ua || "-") + "\n版本：" + (p.device.version || "-") + "\n清单：" + p.checklist.passed + "/" + p.checklist.total + "（缺 " + (p.checklist.missingIds.join(",") || "无") + "）\n麦克风：" + JSON.stringify(p.mic) + "\n结论：" + p.verdict;
+  }
+  function flash(btn, msg) { var old = btn.textContent; btn.textContent = msg; setTimeout(function () { btn.textContent = old; }, 1600); }
+  $("btn-copy").addEventListener("click", async function () {
+    var t = text(); var btn = this;
+    try { await navigator.clipboard.writeText(t); flash(btn, "已复制"); }
+    catch (e) { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); flash(btn, "已复制"); } catch (e2) { $("result").hidden = false; $("result").textContent = t; } ta.remove(); }
+    $("result").hidden = false; $("result").textContent = t;
+  });
+  $("btn-share").addEventListener("click", async function () { try { await navigator.share({ title: "Verity 真机验收结果", text: text() }); } catch (e) {} });
+  $("btn-download").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(payload(), null, 2)], { type: "application/json" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "verity-device-acceptance-" + Date.now() + ".json"; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  });
+  $("btn-reset").addEventListener("click", function () { state.steps = {}; state.mic = null; state.startedAt = new Date().toISOString(); save(); $("transcript").value = ""; renderList(); setStat("已清空，可以重新开始。"); renderSummary(); });
+  $("btn-env").addEventListener("click", envCheck);
+  document.documentElement.classList.add("device-check-ready");
+  renderList(); envCheck();
+})();
+</script>
+</body>
+</html>
