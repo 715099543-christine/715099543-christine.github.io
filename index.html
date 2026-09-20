@@ -463,8 +463,8 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="styles.e0.31.0.css" />
-<link rel="stylesheet" href="zh.e0.31.0.css" />
+<link rel="stylesheet" href="styles.e0.32.0.css" />
+<link rel="stylesheet" href="zh.e0.32.0.css" />
 </head>
 <body>
 
@@ -505,24 +505,6 @@
   </nav>
 </header>
 
-<section class="hero card" id="home">
-  <div class="hero-copy">
-    <div class="hero-slogan">每个家庭的AI私人CFO</div>
-    <div class="hero-promise-line">一个APP，管好全家的钱、保障和未来。</div>
-    <p class="hero-desc">先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。</p>
-    <div class="hero-actions">
-      <button type="button" class="primary hero-voice-cta js-voice-start">🎤 开始语音建立家庭档案</button>
-      <button type="button" class="ghost" id="hero-establish">用表格建立我的家庭</button>
-      <button type="button" class="ghost hidden" id="hero-back">回到我的家庭档案</button>
-    </div>
-  </div>
-  <div class="hero-account" id="hero-account">
-    <div class="k" id="hero-account-kind">本机账户</div>
-    <div class="v" id="hero-account-name">尚未注册</div>
-    <div class="h" id="hero-account-meta">正在确认账户与档案的保存位置…</div>
-  </div>
-</section>
-
 <section class="card" id="chat-dock" aria-labelledby="chat-title">
   <div class="chat-head">
     <div>
@@ -545,19 +527,38 @@
     <button type="button" class="ghost" id="chat-account">账户</button>
     <button type="button" class="ghost" id="chat-profile">家庭档案</button>
     <button type="button" class="ghost" id="chat-voice-builder">语音建档</button>
+    <button type="button" class="ghost" id="chat-wizard">表格填写</button>
   </div>
 </section>
 
-<section class="card" id="voice-builder" aria-labelledby="voice-title">
+<section class="hero card hidden" id="home">
+  <div class="hero-copy">
+    <div class="hero-slogan">每个家庭的AI私人CFO</div>
+    <div class="hero-promise-line">一个APP，管好全家的钱、保障和未来。</div>
+    <p class="hero-desc">先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。</p>
+    <div class="hero-actions">
+      <button type="button" class="primary hero-voice-cta js-voice-start">🎤 开始语音建立家庭档案</button>
+      <button type="button" class="ghost" id="hero-establish">用表格建立我的家庭</button>
+      <button type="button" class="ghost hidden" id="hero-back">回到我的家庭档案</button>
+    </div>
+  </div>
+  <div class="hero-account" id="hero-account">
+    <div class="k" id="hero-account-kind">本机账户</div>
+    <div class="v" id="hero-account-name">尚未注册</div>
+    <div class="h" id="hero-account-meta">正在确认账户与档案的保存位置…</div>
+  </div>
+</section>
+
+<section class="card hidden" id="voice-builder" aria-labelledby="voice-title">
   <div class="voice-head">
     <div>
       <h2 id="voice-title">开始语音建立家庭档案</h2>
       <p class="sub" id="voice-support-hint">像聊天一样描述家庭情况，系统帮你整理成结构化档案；支持普通话、粤语和文字输入。</p>
     </div>
-    <div class="voice-lang" role="group" aria-label="识别语言">
-      <button type="button" id="voice-lang-zh" aria-pressed="true">普通话</button>
-      <button type="button" id="voice-lang-hk" aria-pressed="false">粤语</button>
-      <span class="pill info" id="voice-lang-hint">普通话识别</span>
+    <div class="voice-lang" role="group" aria-label="识别语言（自动判定）">
+      <button type="button" class="hidden" id="voice-lang-zh" aria-pressed="true" hidden>普通话</button>
+      <button type="button" class="hidden" id="voice-lang-hk" aria-pressed="false" hidden>粤语</button>
+      <span class="pill info" id="voice-lang-hint">自动识别语言</span>
     </div>
   </div>
   <p class="voice-consent">点击麦克风即表示你同意在本次会话使用麦克风进行语音识别；原始录音不会保存，只有你逐项确认后的内容才会写入云端档案。</p>
@@ -587,7 +588,7 @@
   <div id="voice-status" class="voice-status" role="status" aria-live="polite"></div>
 </section>
 
-<section class="card" id="profile-modules" aria-labelledby="profile-modules-title">
+<section class="card hidden" id="profile-modules" aria-labelledby="profile-modules-title">
   <h2 id="profile-modules-title">家庭档案入口</h2>
   <div class="sub">以下入口均打开真实表单；同一账户的数据加密同步到云端。</div>
   <div class="module-entry-grid">
@@ -609,7 +610,7 @@
      常驻一条镜像提示带：只有当档案区不在视野内时它才出现，档案区一进入视野即自动收起。 -->
 <div class="note hidden" id="home-notice" role="status" aria-live="polite"></div>
 
-<section class="card" id="home-dashboard">
+<section class="card hidden" id="home-dashboard">
   <div class="home-head">
     <div>
       <h2>我的家庭总览</h2>
@@ -671,7 +672,7 @@
     </div>
   </section>
 
-  <section class="card" id="profiles">
+  <section class="card hidden" id="profiles">
     <h2 id="pf-storage-title">我的家庭档案</h2>
     <div class="sub" id="pf-storage-summary">正在确认档案的保存位置与数据流向，确认后会按你当前的账户与通道如实说明。</div>
     <div class="sub" id="pf-channel-notice">正在确认本次运行的通道，确认后会如实说明家庭档案的流向。</div>
@@ -702,7 +703,7 @@
     </div>
   </section>
 
-  <section class="card" id="wizard">
+  <section class="card hidden" id="wizard">
     <h2>建立家庭档案</h2>
     <div class="sub">按家庭真实情况填写。缺失的必填项会让引擎拒绝判断（ABSTAIN），而不是替家庭假设。</div>
 
@@ -1013,11 +1014,11 @@
   <a href="/privacy.html">隐私政策</a> · <a href="/terms.html">使用条款与风险声明</a> · <a href="/check/">投资核查工具</a>
 </footer>
 
-<script src="verity-digest.e0.31.0.js"></script>
-<script src="zh.e0.31.0.js"></script>
-<script src="voice-nlu.e0.31.0.js"></script>
-<script src="chat-dock.e0.31.0.js"></script>
-<script src="wx-tip.e0.31.0.js"></script>
-<script src="family/voice-builder.e0.31.0.js"></script>
+<script src="verity-digest.e0.32.0.js"></script>
+<script src="zh.e0.32.0.js"></script>
+<script src="voice-nlu.e0.32.0.js"></script>
+<script src="chat-dock.e0.32.0.js"></script>
+<script src="wx-tip.e0.32.0.js"></script>
+<script src="family/voice-builder.e0.32.0.js"></script>
 </body>
 </html>
