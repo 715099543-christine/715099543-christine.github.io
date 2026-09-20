@@ -1234,7 +1234,7 @@
   "x-verity": {
     "api_version": "v0",
     "api_contract_version": "0.2.0",
-    "product_version": "e0.30.0",
+    "product_version": "e0.31.0",
     "algorithm_version": "e0.4.0",
     "production_authority": "OFF",
     "release_gate": "DENY",
@@ -1760,10 +1760,10 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="../styles.e0.30.0.css" />
-<link rel="stylesheet" href="../zh.e0.30.0.css" />
-<link rel="stylesheet" href="family.e0.30.0.css" />
-<link rel="stylesheet" href="../family-insurance.e0.30.0.css" />
+<link rel="stylesheet" href="../styles.e0.31.0.css" />
+<link rel="stylesheet" href="../zh.e0.31.0.css" />
+<link rel="stylesheet" href="family.e0.31.0.css" />
+<link rel="stylesheet" href="../family-insurance.e0.31.0.css" />
 </head>
 <body>
 
@@ -1861,7 +1861,6 @@
     <a href="../check/">投资核查</a>
     <a href="#home-dashboard">我的家庭总览</a>
     <a href="#profiles">我的家庭档案</a>
-    <a href="#engine-strip">引擎准备状态</a>
     <a href="#voice-builder">语音建立家庭档案</a>
     <a href="#wizard">建立家庭档案（表格）</a>
     <a href="#r-verdict">判定与今日行动</a>
@@ -1876,7 +1875,6 @@
     <a href="#insurance-lab">香港保险方案实验室</a>
     <a href="#r-stress">压力测试</a>
     <a href="#r-evidence">证据与审计</a>
-    <a href="#api-contract">接口契约与版本</a>
     <a href="index.html" data-en-link>English console</a>
   </nav>
 </header>
@@ -1898,6 +1896,8 @@
     <div class="h" id="hero-account-meta">正在确认账户与档案的保存位置…</div>
   </div>
 </section>
+
+
 
 <section class="card" id="voice-builder" aria-labelledby="voice-title">
   <div class="voice-head">
@@ -2012,28 +2012,9 @@
 <main>
 
   <section class="card">
-    <h2>引擎状态</h2>
-    <div class="sub">页面上的所有数字都由 Verity 决策引擎按你输入的家庭档案真实计算，不预设任何结果。</div>
-    <div class="grid c4">
-      <div class="metric"><div class="k">引擎版本</div><div class="v info" id="st-algo">—</div><div class="h">算法版本</div></div>
-      <div class="metric"><div class="k">服务范围</div><div class="v" id="st-authority">—</div><div class="h">仅提供决策支持</div></div>
-      <div class="metric"><div class="k">发布状态</div><div class="v" id="st-gate">—</div><div class="h">正式版</div></div>
-      <div class="metric"><div class="k">计算通道</div><div class="v info" id="st-channel">检测中…</div><div class="h" id="st-channel-hint">正在检测计算通道</div></div>
-    </div>
-
-    <div class="engine-strip" id="engine-strip" data-phase="idle">
-      <div class="es-head">
-        <span class="es-dot" id="es-dot" aria-hidden="true"></span>
-        <span class="es-phase" id="es-phase">引擎尚未开始准备</span>
-        <span class="es-pct" id="es-pct">0%</span>
-      </div>
-      <div class="es-bar" id="es-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="es-bar-fill"></i></div>
-      <div class="es-meta" id="es-meta">首屏已可填写家庭档案；引擎运行时会在后台准备，准备期间不影响输入。</div>
-      <div class="es-actions">
-        <button type="button" class="ghost" id="es-start">立即准备引擎</button>
-        <button type="button" class="ghost hidden" id="es-retry">重试准备引擎</button>
-      </div>
-    </div>
+    <h2>Verity 决策引擎</h2>
+    <div class="sub">页面上的所有数字都由 Verity 决策引擎按你输入的家庭档案真实计算，仅提供决策支持，不预设任何结果。</div>
+    <p class="note" id="engine-note">运行分析时引擎会自动就绪，不需要你操作。</p>
     <div class="pwa-strip hidden" id="pwa-strip">
       <span class="pwa-dot" id="pwa-dot" aria-hidden="true"></span>
       <span id="pwa-text"></span>
@@ -2339,22 +2320,6 @@
 
   </section>
 
-  <!-- 接口契约与版本（T-E0-015）。本页、后端接口与构建产物共用**同一份**接口描述文件，
-       它由 api/openapi.py 的路由表生成，不是手抄的副本。端点清单、版本号与安全姿态全部
-       来自注入进本页的那一份描述文件；未注入时保持失败关闭，不显示任何编造数字。 -->
-  <section class="card" id="api-contract">
-    <h2>接口契约与版本</h2>
-    <div class="sub">本页与后端共用同一份接口描述文件，由路由表生成，不是手抄的副本。</div>
-    <div class="grid c4" id="api-contract-metrics"></div>
-    <div class="wiz-toolbar" id="api-contract-actions">
-      <button type="button" id="api-contract-download">下载 OpenAPI 文档</button>
-      <button type="button" class="ghost" id="api-contract-toggle" aria-expanded="true"
-              aria-controls="api-contract-body">收起端点清单</button>
-      <span class="pill info" id="api-contract-status">—</span>
-    </div>
-    <div id="api-contract-body">—</div>
-  </section>
-
   <section class="card">
     <h2>边界与免责</h2>
     <div class="note">
@@ -2415,8 +2380,8 @@
      必须显式回退一级，否则运行时请求会 404 并永久卡在「引擎准备中」。 */
   window.VERITY_RUNTIME_BASE = "../";
 </script>
-<script src="family-api.e0.30.0.js"></script>
-<script src="family-boot.e0.30.0.js"></script>
-<script src="../wx-tip.e0.30.0.js"></script>
+<script src="family-api.e0.31.0.js"></script>
+<script src="family-boot.e0.31.0.js"></script>
+<script src="../wx-tip.e0.31.0.js"></script>
 </body>
 </html>

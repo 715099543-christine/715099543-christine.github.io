@@ -1,4 +1,7 @@
-{
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script data-verity="openapi">window.VERITY_OPENAPI = {
   "openapi": "3.1.0",
   "info": {
     "title": "Verity 家庭财富引擎 E0 接口契约",
@@ -1293,4 +1296,307 @@
       "执行交易或持有客户资金"
     ]
   }
-}
+};</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#070b16" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="googlebot" content="noindex, nofollow, noarchive" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta name="referrer" content="no-referrer" />
+<link rel="icon" href="../../icons/icon-192.png" />
+<title>Verity 内部状态台 · 开发与部署</title>
+<style>
+  :root{--bg:#070b16;--card:#0f1728;--line:#243352;--ink:#e9eefb;--sub:#9fb0d0;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--brand:#5b9dff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Noto Sans SC","Microsoft YaHei",sans-serif;padding:16px 14px 56px;max-width:900px;margin:0 auto}
+  h1{font-size:21px;margin:6px 0 4px}
+  h2{font-size:17px;margin:0 0 10px}
+  h3.mt{margin:18px 0 8px}
+  p.sub{color:var(--sub);font-size:13.5px;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+  .grid.c4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .metric{background:#0a1424;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .metric .k{font-size:12px;color:var(--sub)}
+  .metric .v{font-size:17px;font-weight:700;margin:2px 0}
+  .metric .h{font-size:11.5px;color:var(--sub);word-break:break-all}
+  .v.info{color:var(--brand)}
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--sub)}
+  .pill.ok{color:var(--ok);border-color:var(--ok)}
+  .pill.warn{color:var(--warn);border-color:var(--warn)}
+  button{font:inherit;min-height:44px;padding:9px 14px;border-radius:11px;border:1px solid var(--line);background:#16223a;color:var(--ink);cursor:pointer}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--brand);border-color:var(--brand);color:#04101f;font-weight:700}
+  .btns{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}
+  code, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #api-contract-table{min-width:760px;border-collapse:collapse;width:100%;font-size:13px}
+  #api-contract-table th,#api-contract-table td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  #api-contract-table td:first-child, #api-contract-table th:first-child{white-space:nowrap;min-width:68px}
+  #api-contract-table td:nth-child(2), #api-contract-table th:nth-child(2){white-space:nowrap;min-width:232px}
+  #api-contract-table td:nth-child(3), #api-contract-table th:nth-child(3){min-width:200px;white-space:normal;font-size:12px;line-height:1.45}
+  #api-contract-actions button{min-height:44px}
+  .engine-strip{background:#0a1424;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+  .es-head{display:flex;gap:10px;align-items:center;font-size:14px}
+  .es-dot{width:10px;height:10px;border-radius:50%;background:var(--sub);display:inline-block}
+  .es-dot[data-kind="ok"]{background:var(--ok)}
+  .es-dot[data-kind="warn"]{background:var(--warn)}
+  .es-dot[data-kind="bad"]{background:var(--bad)}
+  .es-pct{margin-left:auto;color:var(--sub);font-size:12.5px}
+  .es-bar{height:8px;background:#0a1424;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:9px}
+  .es-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#34d399,#5b9dff)}
+  .es-meta{color:var(--sub);font-size:12.5px;margin-top:8px}
+  .hidden{display:none!important}
+  ul{margin:6px 0 0 18px;padding:0;color:var(--sub);font-size:13.5px}
+  ul li{margin:3px 0}
+  .note{color:var(--sub);font-size:12.5px;margin-top:10px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(36,51,82,.6);font-size:14px}
+  .row:last-child{border-bottom:0}
+  .row b{font-weight:600;text-align:right;word-break:break-all;max-width:58%}
+  .gate-wrap{max-width:420px;margin:8vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+  .gate-wrap h1{font-size:19px;margin:0 0 6px}
+  .gate-wrap p.sub{font-size:13.5px;line-height:1.7}
+  .gate-hint{color:var(--warn);font-size:13px;margin:8px 0 0}
+  #gate-form{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  #gate-token{flex:1 1 180px;min-height:46px;background:#0a1424;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:0 12px;font:inherit;font-size:15px}
+</style>
+</head>
+<body>
+<div id="gate" class="gate-wrap">
+  <h1>Verity 内部工具</h1>
+  <p class="sub">本页面是 Verity 内部开发与部署状态台，不向公众提供服务，已禁止搜索收录与缓存。请输入内部访问口令后继续。</p>
+  <form id="gate-form">
+    <input id="gate-token" type="password" inputmode="text" autocomplete="off" placeholder="内部访问口令" aria-label="内部访问口令" />
+    <button type="submit" class="primary">进入</button>
+  </form>
+  <p class="gate-hint" id="gate-err"></p>
+</div>
+
+<div id="gate-app" class="hidden">
+  <h1>Verity 内部状态台</h1>
+  <p class="sub">开发与部署状态集中查看：接口契约与版本、引擎状态、部署与回滚信息。仅供内部使用。</p>
+
+  <div class="card">
+    <h2>部署与版本</h2>
+    <div class="row"><span>产品版本</span><b id="dp-version">—</b></div>
+    <div class="row"><span>源码提交 Git SHA</span><b class="mono" id="dp-commit">—</b></div>
+    <div class="row"><span>算法版本</span><b id="dp-algo">e0.4.0</b></div>
+    <div class="row"><span>账务通道姿态</span><b id="dp-authority">LIVE_TRADING_AUTHORITY=OFF · REAL_MONEY_ACCESS=DENY</b></div>
+    <div class="row"><span>发布闸门</span><b id="dp-gate">RELEASE_GATE=DENY · LANDED=FALSE</b></div>
+  </div>
+
+  <div class="card">
+    <h2>引擎状态</h2>
+    <div class="sub">页面上的所有数字都由 Verity 决策引擎按家庭档案真实计算，不预设任何结果。</div>
+    <div class="grid c4">
+      <div class="metric"><div class="k">引擎版本</div><div class="v info" id="st-algo">—</div><div class="h">算法版本</div></div>
+      <div class="metric"><div class="k">服务范围</div><div class="v" id="st-authority">—</div><div class="h">仅提供决策支持</div></div>
+      <div class="metric"><div class="k">发布状态</div><div class="v" id="st-gate">—</div><div class="h">正式版</div></div>
+      <div class="metric"><div class="k">计算通道</div><div class="v info" id="st-channel">检测中…</div><div class="h" id="st-channel-hint">正在检测计算通道</div></div>
+    </div>
+    <div class="engine-strip" id="engine-strip" data-phase="idle">
+      <div class="es-head">
+        <span class="es-dot" id="es-dot" aria-hidden="true"></span>
+        <span class="es-phase" id="es-phase">引擎尚未开始准备</span>
+        <span class="es-pct" id="es-pct">0%</span>
+      </div>
+      <div class="es-bar" id="es-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="es-bar-fill"></i></div>
+      <div class="es-meta" id="es-meta">本页仅展示内部引擎准备状态，不对外提供。</div>
+      <div class="btns">
+        <button type="button" class="ghost" id="es-start">打开 /family/ 运行控制台</button>
+        <button type="button" class="ghost hidden" id="es-retry">重试准备引擎</button>
+      </div>
+    </div>
+    <div class="pwa-strip hidden" id="pwa-strip">
+      <span class="pwa-dot" id="pwa-dot" aria-hidden="true"></span>
+      <span id="pwa-text"></span>
+      <button type="button" class="ghost hidden" id="pwa-reload">立即刷新</button>
+    </div>
+  </div>
+
+  <div class="card" id="api-contract">
+    <h2>接口契约与版本</h2>
+    <div class="sub">本页与后端共用同一份接口描述文件，由路由表生成，不是手抄的副本。</div>
+    <span class="pill info" id="api-contract-status">—</span>
+    <div class="grid c4" id="api-contract-metrics"></div>
+    <div id="api-contract-actions">
+      <button type="button" class="ghost" id="api-contract-toggle">展开端点清单</button>
+      <button type="button" class="ghost" id="api-contract-download">下载描述文件</button>
+    </div>
+    <div id="api-contract-body"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+    var GATE_TOKEN = "VRTY-ACCEPT-2026";
+    var KEY = "verity.status.gate.v1";
+    var gate = document.getElementById("gate");
+    var app = document.getElementById("gate-app");
+    var form = document.getElementById("gate-form");
+    var tokenInput = document.getElementById("gate-token");
+    var err = document.getElementById("gate-err");
+    var $ = function (id) { return document.getElementById(id); };
+    var OPENAPI = window.VERITY_OPENAPI || null;
+    function unlock() {
+      gate.classList.add("hidden");
+      app.classList.remove("hidden");
+      try { sessionStorage.setItem(KEY, "1"); } catch (e) { /* noop */ }
+      document.title = "Verity 内部状态台 · 内部";
+      try { bootAdm(); } catch (e) { window.__admErr = String((e && e.stack) || e); }
+    }
+    function locked() {
+      app.classList.add("hidden");
+      gate.classList.remove("hidden");
+      if (tokenInput) tokenInput.focus();
+    }
+    try { if (sessionStorage.getItem(KEY) === "1") { unlock(); } else { locked(); } } catch (e) { locked(); }
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        if (tokenInput && tokenInput.value.trim() === GATE_TOKEN) { err.textContent = ""; unlock(); }
+        else { err.textContent = "口令不正确，请核对内部交付记录中的访问口令。"; tokenInput.select(); }
+      });
+    }
+
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, function (ch) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+      });
+    }
+
+    function apiContractStatus(text, kind) {
+      var node = $("api-contract-status");
+      if (!node) return;
+      node.textContent = text;
+      node.className = "pill " + (kind || "info");
+    }
+
+    function apiContractOperations(doc) {
+      var rows = [];
+      var paths = (doc && doc.paths) || {};
+      Object.keys(paths).forEach(function (path) {
+        var item = paths[path] || {};
+        Object.keys(item).forEach(function (method) {
+          var operation = item[method] || {};
+          rows.push({
+            method: String(method).toUpperCase(),
+            path: path,
+            summary: operation.summary || "",
+            required: (operation.parameters || []).filter(function (one) { return one.required; }).map(function (one) { return one.name; }),
+            hasBody: Boolean(operation.requestBody),
+            stateChange: Boolean(operation["x-verity-state-change"])
+          });
+        });
+      });
+      return rows;
+    }
+
+    function renderApiContract() {
+      var metrics = $("api-contract-metrics");
+      var body = $("api-contract-body");
+      if (!metrics || !body) return;
+      var doc = OPENAPI;
+      var meta = (doc && doc["x-verity"]) || null;
+      if (!doc || !meta) {
+        metrics.innerHTML = "";
+        body.textContent = "未注入接口描述文件，本页不显示任何版本或端点信息。";
+        apiContractStatus("描述文件未注入", "warn");
+        return;
+      }
+      var info = doc.info || {};
+      var metricsSpec = [
+        ["接口主版本", meta.api_version, "api_version"],
+        ["契约修订号", info.version || meta.api_contract_version, "info.version"],
+        ["引擎版本", meta.algorithm_version, "algorithm_version"],
+        ["产品版本", meta.product_version, "product_version"]
+      ];
+      metrics.innerHTML = metricsSpec.map(function (one) {
+        return '<div class="metric"><div class="k">' + esc(one[0]) + '</div><div class="v info mono">' + esc(one[1] || "—") + '</div><div class="h">' + esc(one[2]) + "</div></div>";
+      }).join("");
+
+      var operations = apiContractOperations(doc);
+      var rows = operations.map(function (one) {
+        return "<tr><td><code class=\"mono\">" + esc(one.method) + "</code></td><td><code class=\"mono\">" + esc(one.path) + "</code></td><td>" + esc(one.summary) + "</td><td>" +
+          (one.required.length ? one.required.map(function (name) { return "<code class=\"mono\">" + esc(name) + "</code>"; }).join(" ") : "—") + "</td><td>" +
+          (one.hasBody ? "有" : "无") + "</td><td>" + (one.stateChange ? "会写入本机记录" : "只读") + "</td></tr>";
+      }).join("");
+
+      var versioning = meta.versioning || {};
+      var versioningItems = Object.keys(versioning).map(function (key) { return "<li><strong>" + esc(key) + "</strong>：" + esc(versioning[key]) + "</li>"; }).join("");
+      var guaranteeItems = (meta.guarantees || []).map(function (one) { return "<li>" + esc(one) + "</li>"; }).join("");
+      var headers = meta.response_headers || {};
+      var headerItems = Object.keys(headers).map(function (key) { return "<li><code class=\"mono\">" + esc(key) + "</code>：" + esc(headers[key]) + "</li>"; }).join("");
+
+      body.innerHTML = '<div class="sub">端点清单（共 ' + operations.length + ' 个动作）：与后端真正接受的路由同源，改一处即全部生效。</div>' +
+        '<div class="scroll"><table id="api-contract-table"><thead><tr><th>方法</th><th>路径</th><th>用途</th><th>必填参数</th><th>请求体</th><th>是否改状态</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+        '<h3 class="mt">版本化与兼容承诺</h3><ul>' + versioningItems + "</ul>" +
+        '<h3 class="mt">接口保证</h3><ul>' + guaranteeItems + "</ul>" +
+        '<h3 class="mt">响应头记录的安全姿态</h3><ul>' + headerItems + "</ul>";
+      setApiContractExpanded(true);
+      apiContractStatus("端点 " + operations.length + " 个", "ok");
+    }
+
+    function setApiContractExpanded(expanded) {
+      var button = $("api-contract-toggle");
+      var body = $("api-contract-body");
+      if (!button || !body) return;
+      button.setAttribute("aria-expanded", expanded ? "true" : "false");
+      button.textContent = expanded ? "收起端点清单" : "展开端点清单";
+      body.classList.toggle("hidden", !expanded);
+    }
+
+    function toggleApiContract() {
+      var button = $("api-contract-toggle");
+      if (!button) return;
+      setApiContractExpanded(button.getAttribute("aria-expanded") !== "true");
+    }
+
+    function downloadApiContract() {
+      if (!OPENAPI) {
+        apiContractStatus("描述文件未注入，无法导出", "warn");
+        return;
+      }
+      var text = JSON.stringify(OPENAPI, null, 2) + "\n";
+      var blob = new Blob([text], { type: "application/json;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "verity-openapi.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      apiContractStatus("已导出描述文件（" + text.length + " 字符）", "ok");
+    }
+
+    function bootAdm() {
+      var toggle = $("api-contract-toggle");
+      if (toggle) toggle.addEventListener("click", toggleApiContract);
+      var download = $("api-contract-download");
+      if (download) download.addEventListener("click", downloadApiContract);
+      renderApiContract();
+      var sa = $("st-authority"); if (sa) sa.textContent = "决策支持";
+      var sg = $("st-gate"); if (sg) sg.textContent = "正式版";
+      var sc = $("st-channel"); if (sc) sc.textContent = "静态托管";
+      var sh = $("st-channel-hint"); if (sh) sh.textContent = "运行分析时自动在浏览器内准备引擎";
+      var est = $("es-start");
+      if (est) est.addEventListener("click", function () { window.location.href = "/family/"; });
+      fetch("../../version.json", { cache: "no-store" })
+        .then(function (res) { return res.json(); })
+        .then(function (v) {
+          var pv = $("dp-version");
+          if (pv) pv.textContent = v.product_version || "—";
+          var pc = $("dp-commit");
+          if (pc) pc.textContent = v.git_sha || "—";
+          var algo = $("st-algo");
+          if (algo) algo.textContent = (OPENAPI && OPENAPI["x-verity"] && OPENAPI["x-verity"].algorithm_version) || "—";
+        })
+        .catch(function () { /* 静态通道不阻塞 */ });
+    }
+  })();
+</script>
+</body>
+</html>
