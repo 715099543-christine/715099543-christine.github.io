@@ -1927,7 +1927,9 @@
     </div>
   </div>
   <form id="voice-form" class="voice-input-row" autocomplete="off">
-    <button type="button" id="voice-mic" aria-label="开始或停止语音输入" title="点击说话">🎤</button>
+    <button type="button" id="voice-mic" aria-label="开始语音输入（聆听中再点即暂停/继续）" title="点击说话">🎤</button>
+    <button type="button" id="voice-pause" class="hidden" aria-label="暂停语音输入" aria-pressed="false" title="暂停或继续聆听">暂停</button>
+    <button type="button" id="voice-cancel" class="hidden" aria-label="取消本次语音输入" title="取消本次语音输入，已说的内容不保存">取消</button>
     <input id="voice-input" type="text" placeholder="例如：家里两个大人一个孩子，我月收入三万，存款五十万…" aria-label="语音建档文字输入" />
     <button type="submit" class="primary">发送</button>
   </form>

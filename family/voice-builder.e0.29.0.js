@@ -6,7 +6,9 @@
  *   1. 首页突出「开始语音建立家庭档案」：语音（普通话/粤语）+ 文字备用双通道；
  *   2. 一次只问一个最关键缺失项，把用户的话解析成事实 → 逐项复述 → 确认后才写入草稿；
  *   3. 支持语音指令：上一题 / 我说错了 / 修改 / 稍后填写 / 保存退出 / 继续 / 运行家庭分析 / 查看摘要；
- *   4. 每次确认自动同步底层表单并落云端（复用控制台云端保存通道，权威数据在云端）。
+ *   4. 每次确认自动同步底层表单并落云端（复用控制台云端保存通道，权威数据在云端）；
+ *   5. Round 59：麦克风授权 / 暂停 / 继续 / 取消 / 识别失败 / 网络中断（自动重试一次）
+ *      六个出口都有明确反馈，且任何出口都不保存原始录音。
  *
  * 隐私：使用麦克风前必须先点按钮（用户手势触发浏览器授权弹窗）；原始录音不落盘，
  *       不做广告/训练用途；只有用户确认后的结构化数据才会保存。
@@ -32,6 +34,11 @@
     pendingName: null,    /* 等待用户确认档案名称 {next, proposed} */
     pendingRun: false,    /* 说过「运行家庭分析」——缺项补齐后自动运行（Round 55） */
     interviewStarted: false, /* 建档问答是否已开始（Round 57） */
+    session: false,       /* 语音会话是否进行中（Round 59：暂停/继续/取消的载体） */
+    paused: false,        /* 会话已暂停（已识别内容已入对话，不重复提交） */
+    suppress: false,      /* 自己调 stop() 触发的 aborted/no-speech 不算故障 */
+    retryTimer: 0,        /* 网络中断自动重试定时器 */
+    retryUsed: false,     /* 本次会话是否已重试过一次 */
   };
 
   function bot(text) { appendLine("bot", text); }
@@ -581,20 +588,158 @@
     } catch (ignored) { /* noop */ }
   }
 
-  function stopListening() {
+  /* ------------------------------------------------ 会话控制（Round 59）
+     必做的六个出口：麦克风授权 / 暂停 / 继续 / 取消 / 识别失败 / 网络中断。
+     任何路径都不保存原始录音、不把识别文字写入日志或缓存，只有用户逐项确认的
+     事实才会进入草稿并同步云端。 */
+
+  var RETRY_DELAY_MS = 2500;
+
+  /* 会话控件（暂停 / 取消）只在真正聆听期间出现，结束时立刻收起，不做假按钮。 */
+  function setControls(active, paused) {
+    var pause = $("voice-pause"), cancel = $("voice-cancel");
+    if (pause) {
+      pause.classList[active ? "remove" : "add"]("hidden");
+      pause.textContent = paused ? "继续" : "暂停";
+      pause.setAttribute("aria-label", paused ? "继续语音输入" : "暂停语音输入");
+      pause.setAttribute("aria-pressed", paused ? "true" : "false");
+    }
+    if (cancel) cancel.classList[active ? "remove" : "add"]("hidden");
+  }
+
+  function clearRetry() {
+    if (state.retryTimer) {
+      try { window.clearTimeout(state.retryTimer); } catch (ignored) { /* noop */ }
+      state.retryTimer = 0;
+    }
+  }
+
+  /* 停止底层识别（暂停、结束、错误路径共用）。state.suppress 让「我们自己调 stop()」
+     触发的 aborted/no-speech 不被误报成识别故障。 */
+  function stopListening(keepStatus) {
+    state.suppress = true;
     if (state.speech && state.listening) {
       try { state.speech.stop(); } catch (ignored) { /* noop */ }
     }
     state.listening = false;
+    state.speech = null;
     var btn = $("voice-mic");
     if (btn) btn.dataset.on = "false";
-    status("", "idle");
+    if (!keepStatus) status("", "idle");
+    after(1500, function () { state.suppress = false; });
+  }
+
+  function endSession() {
+    clearRetry();
+    state.session = false;
+    state.paused = false;
+    state.retryUsed = false;
+    stopListening(true);
+    setControls(false, false);
+  }
+
+  function handleRecognError(err) {
+    /* 先判定，再停底层：我们自己调 stop() 时浏览器可能同步回调 onend/onerror，
+       顺序反了会把「网络中断」误判成「用户暂停」，让用户看到错的提示。 */
+    var wasPaused = state.paused;
+    var intentional = state.suppress && (err === "aborted" || err === "no-speech");
+    stopListening(true);
+    if (wasPaused || intentional) {
+      state.suppress = false;
+      if (state.session) status("已暂停，点「继续」接着说", "warn");
+      return;
+    }
+    if (err === "not-allowed" || err === "service-not-allowed") {
+      endSession();
+      status("麦克风没有获得授权", "warn");
+      bot("浏览器拒绝了麦克风访问。你可以在浏览器地址栏里重新允许麦克风，或者直接用下面的输入框打字。");
+      guideToTextInput();
+      return;
+    }
+    if (err === "no-speech") {
+      if (state.session) {
+        state.paused = true;
+        setControls(true, true);
+        status("没有听到声音，点「继续」或重新点麦克风", "idle");
+        return;
+      }
+      status("没有听到声音", "idle");
+      bot("没有听到声音。你可以再点一次麦克风，或者直接打字。");
+      return;
+    }
+    if (err === "network") {
+      if (state.session && !state.retryUsed) {
+        state.retryUsed = true;
+        status("网络中断，正在自动重试一次…", "busy");
+        bot("网络断了，正在自动重试一次；如果仍然不行，直接在输入框打字也能建档。");
+        clearRetry();
+        state.retryTimer = window.setTimeout(function () {
+          state.retryTimer = 0;
+          if (state.session && !state.paused) listen();
+        }, RETRY_DELAY_MS);
+        return;
+      }
+      endSession();
+      status("网络中断，语音识别暂时不可用", "warn");
+      bot("网络仍然不稳定，已切回文字输入：把你想说的内容打进下面的输入框即可，功能不受影响。");
+      guideToTextInput();
+      return;
+    }
+    endSession();
+    status("语音识别失败：" + (err || "未知错误"), "warn");
+    bot("语音识别暂时不可用（" + (err || "未知错误") + "），请用输入框打字，功能不受影响。");
+    guideToTextInput();
+  }
+
+  function listen() {
+    if (!SpeechRecognitionImpl || !state.session) return;
+    var rec = new SpeechRecognitionImpl();
+    rec.lang = state.mode;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.continuous = false;
+    rec.onresult = function (event) {
+      var transcript = "";
+      for (var i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
+      }
+      if (!transcript) return;
+      endSession();
+      status("识别完成", "ok");
+      handleText(transcript);
+    };
+    rec.onerror = function (event) { handleRecognError(event && event.error); };
+    rec.onend = function () {
+      if (!state.listening) return;
+      var self_stopped = state.suppress;   /* 我们自己 stop() 触发的 onend，不算「自动收尾」 */
+      state.listening = false;
+      state.speech = null;
+      var b = $("voice-mic");
+      if (b) b.dataset.on = "false";
+      if (self_stopped || state.paused || !state.session) return;
+      /* 移动端识别常在一次停顿后自动收尾：不当成故障，给「继续」而不是静默失败 */
+      state.paused = true;
+      setControls(true, true);
+      status("已停止聆听，点「继续」接着说", "idle");
+    };
+    state.speech = rec;
+    state.listening = true;
+    state.paused = false;
+    var btn = $("voice-mic");
+    if (btn) btn.dataset.on = "true";
+    setControls(true, false);
+    status("正在听…", "busy");
+    try { rec.start(); } catch (err) {
+      endSession();
+      status("语音启动失败", "warn");
+      bot("语音启动失败（" + (err && err.message ? err.message : err) + "），请用输入框打字。");
+      guideToTextInput();
+    }
   }
 
   function setLang(mode) {
     state.mode = mode;
     var langLabel = mode === "zh-HK" ? "粤语" : "普通话";
-    var toggleOn = $("voice-lang-zh") ? (mode === "zh-CN" ? "zh" : "hk") : "";
     var zh = $("voice-lang-zh"), hk = $("voice-lang-hk");
     if (zh) zh.setAttribute("aria-pressed", mode === "zh-CN" ? "true" : "false");
     if (hk) hk.setAttribute("aria-pressed", mode === "zh-HK" ? "true" : "false");
@@ -602,6 +747,11 @@
     if (hint) hint.textContent = langLabel + "识别";
     if (state.speech) {
       try { state.speech.lang = mode; } catch (ignored) { /* noop */ }
+    }
+    /* 语言按钮在聆听中也要真的生效：重启一个带新语言的识别实例（会话与已确认内容不变） */
+    if (state.session && !state.paused) {
+      stopListening(true);
+      listen();
     }
   }
 
@@ -613,61 +763,47 @@
       guideToTextInput();
       return;
     }
-    if (state.listening) {
-      stopListening();
-      return;
-    }
+    /* 会话进行中再点麦克风 = 暂停/继续（识别中图标为红色脉冲，语义一致） */
+    if (state.session) { togglePause(); return; }
     /* 点击即视为用户同意本次会话使用麦克风（浏览器会再弹授权确认） */
-    bot("正在听…（点击麦克风图标可停止；也可以直接打字）");
-    var rec = new SpeechRecognitionImpl();
-    rec.lang = state.mode;
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    rec.continuous = false;
-    state.speech = rec;
-    state.listening = true;
-    var btn = $("voice-mic");
-    if (btn) btn.dataset.on = "true";
-    status("正在听…", "busy");
+    state.session = true;
+    state.paused = false;
+    state.retryUsed = false;
+    state.suppress = false;
+    bot("正在听…（可以点「暂停」歇一下、点「取消」放弃这次输入，也可以直接打字）");
+    listen();
+  }
 
-    rec.onresult = function (event) {
-      var transcript = "";
-      for (var i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
-      }
-      if (transcript) {
-        status("识别完成", "ok");
-        stopListening();
-        handleText(transcript);
-      }
-    };
-    rec.onerror = function (event) {
-      stopListening();
-      var msg = event && event.error;
-      if (msg === "not-allowed" || msg === "service-not-allowed") {
-        status("麦克风没有获得授权", "warn");
-        self("（授权被拒绝）");
-        bot("浏览器拒绝了麦克风访问。你可以在浏览器地址栏重新允许麦克风，或者直接用下面的输入框打字。");
-      } else if (msg === "no-speech") {
-        status("没有听到声音", "idle");
-        bot("没有听到声音。你可以再点一次麦克风，或者直接打字。");
-      } else {
-        status("语音识别失败：" + (msg || "未知错误"), "warn");
-        bot("语音识别暂时不可用（" + (msg || "未知错误") + "），请用输入框打字，功能不受影响。");
-      }
-    };
-    rec.onend = function () {
-      if (state.listening) {
-        state.listening = false;
-        var b = $("voice-mic");
-        if (b) b.dataset.on = "false";
-        status("", "idle");
-      }
-    };
-    try { rec.start(); } catch (err) {
-      stopListening();
-      bot("语音启动失败（" + (err && err.message ? err.message : err) + "），请用输入框打字。");
+  function pauseListening() {
+    if (!state.session || state.paused) return;
+    state.paused = true;
+    clearRetry();
+    stopListening(true);
+    setControls(true, true);
+    status("已暂停，点「继续」接着说", "warn");
+  }
+
+  function resumeListening() {
+    if (!state.session || !state.paused) return;
+    state.paused = false;
+    listen();
+  }
+
+  function togglePause() {
+    if (state.paused) resumeListening();
+    else pauseListening();
+  }
+
+  /* 取消：丢弃本次会话（录音不落盘，识别结果也不保存） */
+  function cancelSession(announce) {
+    clearRetry();
+    var rec = state.speech;
+    if (rec) {
+      try { rec.abort(); } catch (ignored) { /* noop */ }
     }
+    endSession();
+    status("已取消本次语音输入", "idle");
+    if (announce) bot("已取消本次语音输入，刚才说的话没有保存。");
   }
 
   /* ------------------------------------------------------------ 初始化 */
@@ -675,6 +811,11 @@
   function bind() {
     var mic = $("voice-mic");
     if (mic) mic.addEventListener("click", startListening);
+
+    var pauseBtn = $("voice-pause");
+    if (pauseBtn) pauseBtn.addEventListener("click", togglePause);
+    var cancelBtn = $("voice-cancel");
+    if (cancelBtn) cancelBtn.addEventListener("click", function () { cancelSession(true); });
 
     var form = $("voice-form");
     if (form) {
@@ -730,6 +871,8 @@
   function init() {
     bind();
     setLang(window.VerityVoiceLang || "zh-CN");
+    /* Round 59：会话控件默认收起（HTML 里也带 hidden，双保险，避免出现假按钮） */
+    setControls(false, false);
     /* Round 57：暴露「语音面板已就绪」标记。family-boot 是异步串行加载脚本的，
        脚本就位前点击「开始语音建立家庭档案」不会绑定任何行为；自动化验收与
        前端自检都需要一个确定的就绪信号，而不是靠 sleep 猜。 */
