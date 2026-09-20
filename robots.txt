@@ -1,0 +1,9 @@
+# Verity AI家庭CFO · 正式站点爬虫指引
+# 内部验收台与遗留内部路径禁止收录（页面同时带 noindex 与 X-Robots-Tag）。
+User-agent: *
+Disallow: /admin/
+Disallow: /device
+
+# 内部交付产物与公开契约旧路径
+Disallow: /reports/
+Disallow: /openapi.json
