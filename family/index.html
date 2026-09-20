@@ -1234,7 +1234,7 @@
   "x-verity": {
     "api_version": "v0",
     "api_contract_version": "0.2.0",
-    "product_version": "e0.29.0",
+    "product_version": "e0.30.0",
     "algorithm_version": "e0.4.0",
     "production_authority": "OFF",
     "release_gate": "DENY",
@@ -1760,10 +1760,10 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="../styles.e0.29.0.css" />
-<link rel="stylesheet" href="../zh.e0.29.0.css" />
-<link rel="stylesheet" href="family.e0.29.0.css" />
-<link rel="stylesheet" href="../family-insurance.e0.29.0.css" />
+<link rel="stylesheet" href="../styles.e0.30.0.css" />
+<link rel="stylesheet" href="../zh.e0.30.0.css" />
+<link rel="stylesheet" href="family.e0.30.0.css" />
+<link rel="stylesheet" href="../family-insurance.e0.30.0.css" />
 </head>
 <body>
 
@@ -1841,7 +1841,9 @@
 </div>
 
 
-<div class="banner">仅提供决策支持 · 不销售保险 · 不推荐任何保险公司 · 家庭数据加密存储于 Verity 后台数据库</div>
+<div class="banner">Verity 提供决策支持｜<a href="../terms.html">安全与免责声明</a></div>
+
+<div id="wx-tip" class="hidden" role="status">建议在 Safari 或系统浏览器中打开 Verity，以获得完整的语音对话与安装体验。<button type="button" id="wx-tip-close" class="wx-tip-close">知道了</button></div>
 
 <header class="top">
   <div class="brand">
@@ -2413,7 +2415,8 @@
      必须显式回退一级，否则运行时请求会 404 并永久卡在「引擎准备中」。 */
   window.VERITY_RUNTIME_BASE = "../";
 </script>
-<script src="family-api.e0.29.0.js"></script>
-<script src="family-boot.e0.29.0.js"></script>
+<script src="family-api.e0.30.0.js"></script>
+<script src="family-boot.e0.30.0.js"></script>
+<script src="../wx-tip.e0.30.0.js"></script>
 </body>
 </html>

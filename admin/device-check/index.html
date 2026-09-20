@@ -4,8 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#070b16" />
-<meta name="robots" content="noindex" />
-<link rel="icon" href="../icons/icon-192.png" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="googlebot" content="noindex, nofollow, noarchive" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta name="referrer" content="no-referrer" />
+<link rel="icon" href="../../icons/icon-192.png" />
 <title>Verity 真机验收台 · 华为 / Android / iPhone</title>
 <style>
   :root{--bg:#070b16;--card:#0f1728;--line:#243352;--ink:#e9eefb;--sub:#9fb0d0;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--brand:#5b9dff}
@@ -33,6 +37,15 @@
   label.chk{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(36,51,82,.6);font-size:14.5px}
   label.chk:last-of-type{border-bottom:0}
   label.chk input{width:24px;height:24px;min-width:24px;margin-top:2px;accent-color:var(--brand)}
+
+  .gate-wrap{max-width:420px;margin:8vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+  .gate-wrap h1{font-size:19px;margin:0 0 6px}
+  .gate-wrap p.sub{font-size:13.5px;line-height:1.7}
+  .gate-hint{color:var(--warn);font-size:13px;margin:8px 0 0}
+  #gate-form{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  #gate-token{flex:1 1 180px;min-height:46px;background:#0a1424;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:0 12px;font:inherit;font-size:15px}
+  .hidden{display:none!important}
+
   .note{color:var(--sub);font-size:12.5px;margin-top:10px}
   ol.flow{margin:6px 0 0 18px;padding:0;color:var(--sub);font-size:13.5px}
   code{background:#0a1424;padding:1px 5px;border-radius:5px;font-size:12.5px}
@@ -41,6 +54,16 @@
 </style>
 </head>
 <body>
+<div id="gate" class="gate-wrap">
+  <h1>Verity 内部工具</h1>
+  <p class="sub">本页面是 Verity 内部验收工具，不向公众提供服务，已禁止搜索收录与缓存。请输入内部访问口令后继续。</p>
+  <form id="gate-form">
+    <input id="gate-token" type="password" inputmode="text" autocomplete="off" placeholder="内部访问口令" aria-label="内部访问口令" />
+    <button type="submit" class="primary">进入</button>
+  </form>
+  <p class="gate-hint" id="gate-err"></p>
+</div>
+<div id="gate-app">
 <h1>Verity 真机验收台</h1>
 <p class="sub">在华为 / Android / iPhone 手机上打开本页，先做设备体检与麦克风真采，再照清单走一遍闭环。本页不要求输入密码，不上传录音。</p>
 
@@ -88,6 +111,25 @@
 </div>
 
 <script>
+
+  /* 内部门禁：令牌只用于隔离普通访客；校验在本机完成，不采集、不上传。 */
+  (function(){
+    var GATE_TOKEN = "VRTY-ACCEPT-2026";
+    var KEY = "verity.device.gate.v1";
+    var gate = document.getElementById("gate");
+    var app = document.getElementById("gate-app");
+    var form = document.getElementById("gate-form");
+    var tokenInput = document.getElementById("gate-token");
+    var err = document.getElementById("gate-err");
+    function unlock(){ gate.classList.add("hidden"); app.classList.remove("hidden"); try{ sessionStorage.setItem(KEY,"1"); }catch(e){} document.title = "Verity 真机验收台 · 内部"; }
+    function locked(){ app.classList.add("hidden"); gate.classList.remove("hidden"); if(tokenInput) tokenInput.focus(); }
+    try{ if(sessionStorage.getItem(KEY)==="1"){ unlock(); } else { locked(); } }catch(e){ locked(); }
+    if(form){ form.addEventListener("submit", function(ev){ ev.preventDefault();
+      if(tokenInput && tokenInput.value.trim() === GATE_TOKEN){ err.textContent=""; unlock(); }
+      else { err.textContent = "口令不正确，请核对内部交付记录中的访问口令。"; tokenInput.select(); }
+    }); }
+  })();
+
 (function () {
   "use strict";
   var KEY = "verity.devicecheck.v1";
@@ -261,5 +303,6 @@
   renderList(); envCheck();
 })();
 </script>
+</div>
 </body>
 </html>

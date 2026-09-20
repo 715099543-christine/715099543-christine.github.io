@@ -41,3 +41,17 @@
 
 /pyodide/*
   Cache-Control: public, max-age=31536000, immutable
+
+# r60：内部验收台禁止缓存与收录；公开旧路径即使被平台重定向也禁止缓存。
+/admin/*
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/device
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+/device/
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+/device/*
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
