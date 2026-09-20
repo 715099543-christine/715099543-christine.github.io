@@ -451,6 +451,19 @@
      静态通道的内联脚本由构建期生成，无法像服务端通道那样用 sha256 白名单锁定，
      故 meta 保留 'unsafe-inline'；框架/对象/表单仍然拒绝。点击劫持防护依赖响应头。 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+<!-- 入口规范化（r68）：www 记录统一回到主域，用户始终落在同一个正式首页；
+     已安装的独立窗口（standalone）不跳转，避免安装实例失去作用域。 -->
+<script>
+(function () {
+  try {
+    var href = location.href;
+    if (href.indexOf("//www.verityready.com") === -1) return;
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    if (standalone) return;
+    location.replace(href.replace("//www.verityready.com", "//verityready.com"));
+  } catch (e) {}
+})();
+</script>
 <meta name="theme-color" content="#070b16" />
 <title>Verity AI家庭CFO · 每个家庭的AI私人CFO</title>
 <meta name="description" content="Verity AI家庭CFO：一个APP，管好全家的钱、保障和未来。先理解家庭如何生活与承担责任，再计算哪些风险会摧毁这个家庭，最后给出跨现金、保险、资产、债务、法律和社会保障的综合保护方案。仅提供决策支持。" />
