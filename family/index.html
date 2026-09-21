@@ -475,10 +475,10 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="../styles.e0.36.0.css" />
-<link rel="stylesheet" href="../zh.e0.36.0.css" />
-<link rel="stylesheet" href="family.e0.36.0.css" />
-<link rel="stylesheet" href="../family-insurance.e0.36.0.css" />
+<link rel="stylesheet" href="../styles.e0.37.0.css" />
+<link rel="stylesheet" href="../zh.e0.37.0.css" />
+<link rel="stylesheet" href="family.e0.37.0.css" />
+<link rel="stylesheet" href="../family-insurance.e0.37.0.css" />
 </head>
 <body>
 
@@ -552,21 +552,6 @@
       <div id="gate-busy" class="hidden"></div>
       <div id="gate-msg" class="hidden" role="status"></div>
 
-      <div id="recovery-card" class="gate-note hidden" role="alert">
-        <strong>请抄写你的恢复码（只显示这一次）：</strong>
-        <div id="recovery-code" class="recovery-code">—</div>
-        <p class="gate-sub">忘记口令时，只有这串恢复码能把云端家庭档案解回来。它不会以明文存进任何服务器，
-          关闭本页后我们也无法再显示给你。</p>
-        <button type="button" id="recovery-copy">复制恢复码</button>
-        <button type="button" id="recovery-ack" class="gate-ack">我已抄写，进入我的家庭CFO</button>
-      </div>
-
-      <div id="recovery-missing" class="gate-note hidden" role="status">
-        <strong>这个账号还没有设置恢复码。</strong>
-        <p class="gate-sub">没有恢复码，忘记口令就再也解不开云端家庭档案。现在生成一次即可（不重新输入口令）。</p>
-        <button type="button" id="recovery-generate">生成我的恢复码</button>
-      </div>
-
       <div class="gate-note">
         <strong>你的数据存在哪里：</strong>家庭档案保存在 Verity 后台数据库里，按账号隔离；
         在写入数据库前会先在<strong>你的浏览器里加密</strong>（口令派生密钥，PBKDF2 21 万次），
@@ -576,6 +561,32 @@
       </div>
       <a class="gate-back" href="../index.html">← 返回官网首页</a>
     </div>
+  </div>
+</div>
+
+<!-- r75 P0 修复：恢复码展示与「补恢复码」两块面板从 #family-gate 内部搬到同级。
+     历史缺陷：它们曾是闸门的子节点，而注册成功（showRecoveryCode）与老账号补码
+     （remindRecoveryMissing）两条路径都会 hide(#family-gate)，于是「只显示一次」的
+     恢复码永远不可见 —— 用户注册后既没有可点的按钮，也进不了控制台，等于卡死。
+     现在它们是闸门的兄弟节点，不再随闸门一起被隐藏。 -->
+<div id="recovery-card" class="recovery-overlay hidden" role="alert" aria-modal="true" aria-label="恢复码">
+  <div class="gate-wrap">
+    <div class="gate-card">
+      <strong>请抄写你的恢复码（只显示这一次）：</strong>
+      <div id="recovery-code" class="recovery-code">—</div>
+      <p class="gate-sub">忘记口令时，只有这串恢复码能把云端家庭档案解回来。它不会以明文存进任何服务器，
+        关闭本页后我们也无法再显示给你。</p>
+      <button type="button" id="recovery-copy">复制恢复码</button>
+      <button type="button" id="recovery-ack" class="gate-ack">我已抄写，进入我的家庭CFO</button>
+    </div>
+  </div>
+</div>
+
+<div id="recovery-missing" class="recovery-banner hidden" role="status">
+  <div class="recovery-banner-inner">
+    <strong>这个账号还没有设置恢复码。</strong>
+    <p class="gate-sub">没有恢复码，忘记口令就再也解不开云端家庭档案。现在生成一次即可（不重新输入口令）。</p>
+    <button type="button" id="recovery-generate">生成我的恢复码</button>
   </div>
 </div>
 
@@ -1127,9 +1138,9 @@
      必须显式回退一级，否则运行时请求会 404 并永久卡在「引擎准备中」。 */
   window.VERITY_RUNTIME_BASE = "../";
 </script>
-<script src="family-api.e0.36.0.js"></script>
-<script src="family-boot.e0.36.0.js"></script>
-<script src="../bottom-tip.e0.36.0.js"></script>
-<script src="../wx-tip.e0.36.0.js"></script>
+<script src="family-api.e0.37.0.js"></script>
+<script src="family-boot.e0.37.0.js"></script>
+<script src="../bottom-tip.e0.37.0.js"></script>
+<script src="../wx-tip.e0.37.0.js"></script>
 </body>
 </html>
