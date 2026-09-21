@@ -338,7 +338,8 @@ section[id], #results { scroll-margin-top: calc(var(--sticky-header-h) + 16px); 
 #sec-nav {
   position: fixed;
   right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  /* 底部有浮层提示时整组上移，否则「回到顶部 / 章节」会被提示条盖住点不到（r71 P0）。 */
+  bottom: calc(12px + var(--bottom-tip-h, 0px) + env(safe-area-inset-bottom, 0px));
   z-index: 25;
   display: flex;
   flex-direction: column;

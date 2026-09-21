@@ -12,15 +12,31 @@
   var bar = document.getElementById("wx-tip");
   if (!bar) return;
 
+  /* r71 P0：提示条出现时必须先给页面让位，否则会压住右下角「回到顶部 / 章节」
+     与页面最后一行的可点控件。让位高度用实测值，不写死常数。 */
+  function reserve() {
+    if (window.VerityBottomTip) window.VerityBottomTip.reserve("wx-tip", bar);
+  }
+
+  function release() {
+    if (window.VerityBottomTip) window.VerityBottomTip.release("wx-tip");
+  }
+
   var close = document.getElementById("wx-tip-close");
   if (close) {
     close.addEventListener("click", function () {
       bar.classList.add("hidden");
+      release();
       try {
         window.localStorage.setItem("verity.wx-tip.dismissed.v1", "1");
       } catch (err) { /* 存不下就只本次隐藏 */ }
     });
   }
+
+  /* 转屏 / 字号变化都会改变提示条高度，重新实测一次。 */
+  window.addEventListener("resize", function () {
+    if (!bar.classList.contains("hidden")) reserve();
+  });
 
   try {
     if (window.localStorage.getItem("verity.wx-tip.dismissed.v1") === "1") {
@@ -30,4 +46,5 @@
   } catch (err) { /* 隐私模式等场景忽略 */ }
 
   bar.classList.remove("hidden");
+  reserve();
 })();

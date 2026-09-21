@@ -32,6 +32,7 @@ const SHELL_ASSETS = [
   "./family-insurance.e0.34.0.css",
   "./voice-nlu.e0.34.0.js",
   "./chat-dock.e0.34.0.js",
+  "./bottom-tip.e0.34.0.js",
   "./wx-tip.e0.34.0.js",
   "./family/voice-builder.e0.34.0.js",
   "./hk-insurance-products.json",

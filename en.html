@@ -47,12 +47,19 @@ body {
 .banner a { color: var(--blue); text-decoration: none; }
 .banner a:hover { text-decoration: underline; }
 
+/* r71 P0「悬浮提示遮挡操作」：底部浮层（微信提示／安装引导）出现时，必须给页面内容和
+   右下角浮动按钮让出位置，否则最后一行可点控件会被压在浮层下面点不到。
+   做法：浮层 JS 把实测高度写进 --bottom-tip-h，这里只消费这个变量，不猜常数。 */
+html.has-bottom-tip body { padding-bottom: calc(var(--bottom-tip-h, 0px) + 24px); }
+
 #wx-tip {
   position: fixed;
   left: 12px;
   right: 12px;
   bottom: 14px;
-  z-index: 60;
+  /* /family/ 的账号闸门是 z-index 90 的全屏对话框；微信提示只有在它之上才会被看到，
+     所以这里取 95，同时由 --bottom-tip-h 保证闸门内容不被压住。 */
+  z-index: 95;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -484,7 +491,7 @@ footer a { display: inline-block; padding: 14px 6px; line-height: 1.4; }
 <div class="grid c3">
 <div class="metric"><div class="k">Inputs digest</div><div class="v "><span class="mono">590b9b5d08f5a3418f29dae70d4b9283&hellip;</span></div><div class="h">sha256 of the household input</div></div>
 <div class="metric"><div class="k">Output digest</div><div class="v "><span class="mono">083803abbb6ce697b5d918079c0e06e1&hellip;</span></div><div class="h">sha256 of the engine output</div></div>
-<div class="metric"><div class="k">Audit record hash</div><div class="v "><span class="mono">311b88edc33ec1ce721c37446df43299&hellip;</span></div><div class="h">hash-chained to the genesis record</div></div>
+<div class="metric"><div class="k">Audit record hash</div><div class="v "><span class="mono">164e3e25a6dc3895daf7ae7101cf778c&hellip;</span></div><div class="h">hash-chained to the genesis record</div></div>
 </div>
 <div class="grid c2" style="margin-top:14px"><div>
 <div class="k" style="color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Sources</div><ul style="color:var(--muted);font-size:13px;margin:0;padding-left:17px">

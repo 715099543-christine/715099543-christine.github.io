@@ -22,6 +22,11 @@ html.family-locked #sec-index-scrim {
   color: #e8ecf7;
   padding: max(18px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
 }
+/* 微信提示条（z-index 95）压在闸门之上时，闸门底部必须同步留出等高的空白，
+   否则「登录并进入我的家庭CFO」会被提示条盖住（r71 P0）。 */
+html.has-bottom-tip #family-gate {
+  padding-bottom: calc(28px + var(--bottom-tip-h, 0px) + env(safe-area-inset-bottom, 0px));
+}
 #family-gate .gate-wrap {
   max-width: 520px;
   margin: 0 auto;

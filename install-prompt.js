@@ -39,10 +39,14 @@
       yesBtn.onclick = handler;
     }
     bar.classList.remove("hidden");
+    /* r71 P0：安装引导同样是底部浮层，出现时必须给页面让位（实测高度写进 --bottom-tip-h）。 */
+    if (window.VerityBottomTip) window.VerityBottomTip.reserve("install-bar", bar);
   }
 
   function hide() {
-    if (bar) bar.classList.add("hidden");
+    if (!bar) return;
+    bar.classList.add("hidden");
+    if (window.VerityBottomTip) window.VerityBottomTip.release("install-bar");
   }
 
   if (noBtn) {
@@ -55,6 +59,12 @@
       hide();
     });
   }
+
+  window.addEventListener("resize", function () {
+    if (bar && !bar.classList.contains("hidden") && window.VerityBottomTip) {
+      window.VerityBottomTip.reserve("install-bar", bar);
+    }
+  });
 
   window.addEventListener("beforeinstallprompt", function (event) {
     event.preventDefault();
