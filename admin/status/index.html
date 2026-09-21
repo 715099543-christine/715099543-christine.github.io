@@ -1234,7 +1234,7 @@
   "x-verity": {
     "api_version": "v0",
     "api_contract_version": "0.2.0",
-    "product_version": "e0.32.0",
+    "product_version": "e0.34.0",
     "algorithm_version": "e0.4.0",
     "production_authority": "OFF",
     "release_gate": "DENY",
@@ -1392,7 +1392,7 @@
     <div class="grid c4">
       <div class="metric"><div class="k">引擎版本</div><div class="v info" id="st-algo">—</div><div class="h">算法版本</div></div>
       <div class="metric"><div class="k">服务范围</div><div class="v" id="st-authority">—</div><div class="h">仅提供决策支持</div></div>
-      <div class="metric"><div class="k">发布状态</div><div class="v" id="st-gate">—</div><div class="h">正式版</div></div>
+      <div class="metric"><div class="k">发布状态</div><div class="v" id="st-gate">—</div><div class="h">未发布（内测）</div></div>
       <div class="metric"><div class="k">计算通道</div><div class="v info" id="st-channel">检测中…</div><div class="h" id="st-channel-hint">正在检测计算通道</div></div>
     </div>
     <div class="engine-strip" id="engine-strip" data-phase="idle">
@@ -1579,7 +1579,7 @@
       if (download) download.addEventListener("click", downloadApiContract);
       renderApiContract();
       var sa = $("st-authority"); if (sa) sa.textContent = "决策支持";
-      var sg = $("st-gate"); if (sg) sg.textContent = "正式版";
+      var sg = $("st-gate"); if (sg) sg.textContent = "未发布（内测）";
       var sc = $("st-channel"); if (sc) sc.textContent = "静态托管";
       var sh = $("st-channel-hint"); if (sh) sh.textContent = "运行分析时自动在浏览器内准备引擎";
       var est = $("es-start");

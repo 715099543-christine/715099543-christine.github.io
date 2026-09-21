@@ -475,10 +475,10 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="../styles.e0.32.0.css" />
-<link rel="stylesheet" href="../zh.e0.32.0.css" />
-<link rel="stylesheet" href="family.e0.32.0.css" />
-<link rel="stylesheet" href="../family-insurance.e0.32.0.css" />
+<link rel="stylesheet" href="../styles.e0.34.0.css" />
+<link rel="stylesheet" href="../zh.e0.34.0.css" />
+<link rel="stylesheet" href="family.e0.34.0.css" />
+<link rel="stylesheet" href="../family-insurance.e0.34.0.css" />
 </head>
 <body>
 
@@ -497,6 +497,7 @@
         <button type="button" class="gate-tab" id="gate-tab-login" role="tab" aria-selected="true">登录</button>
         <button type="button" class="gate-tab" id="gate-tab-register" role="tab" aria-selected="false">注册新账号</button>
         <button type="button" class="gate-tab hidden" id="gate-tab-unlock" role="tab" aria-selected="false">解密解锁</button>
+        <button type="button" class="gate-tab" id="gate-tab-reset" role="tab" aria-selected="false">忘记口令</button>
       </div>
 
       <form id="gate-form-login" autocomplete="on">
@@ -532,8 +533,39 @@
         <button type="submit">解密并进入</button>
       </form>
 
+      <form id="gate-form-reset" class="hidden" autocomplete="on">
+        <p class="gate-sub">
+          用注册时抄写的<strong>恢复码</strong>设置新口令。云端家庭档案会被原样保留：
+          恢复码在<strong>你的浏览器里</strong>解开旧密钥，再用新口令重新加密同一份档案，服务端全程看不到明文。
+        </p>
+        <label for="reset-email">注册邮箱</label>
+        <input id="reset-email" name="email" type="email" autocomplete="username" inputmode="email" required />
+        <label for="reset-code">恢复码（20 位，字母数字，可带连字符）</label>
+        <input id="reset-code" name="recovery_code" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="例如 ABCDE-FGHJK-LMNPQ-RSTUV" required />
+        <label for="reset-password">新口令（至少 10 位）</label>
+        <input id="reset-password" name="new_password" type="password" autocomplete="new-password" required minlength="10" />
+        <label for="reset-password2">再输一次新口令</label>
+        <input id="reset-password2" name="new_password_confirm" type="password" autocomplete="new-password" required minlength="10" />
+        <button type="submit">用恢复码重置口令并进入</button>
+      </form>
+
       <div id="gate-busy" class="hidden"></div>
       <div id="gate-msg" class="hidden" role="status"></div>
+
+      <div id="recovery-card" class="gate-note hidden" role="alert">
+        <strong>请抄写你的恢复码（只显示这一次）：</strong>
+        <div id="recovery-code" class="recovery-code">—</div>
+        <p class="gate-sub">忘记口令时，只有这串恢复码能把云端家庭档案解回来。它不会以明文存进任何服务器，
+          关闭本页后我们也无法再显示给你。</p>
+        <button type="button" id="recovery-copy">复制恢复码</button>
+        <button type="button" id="recovery-ack" class="gate-ack">我已抄写，进入我的家庭CFO</button>
+      </div>
+
+      <div id="recovery-missing" class="gate-note hidden" role="status">
+        <strong>这个账号还没有设置恢复码。</strong>
+        <p class="gate-sub">没有恢复码，忘记口令就再也解不开云端家庭档案。现在生成一次即可（不重新输入口令）。</p>
+        <button type="button" id="recovery-generate">生成我的恢复码</button>
+      </div>
 
       <div class="gate-note">
         <strong>你的数据存在哪里：</strong>家庭档案保存在 Verity 后台数据库里，按账号隔离；
@@ -1095,8 +1127,8 @@
      必须显式回退一级，否则运行时请求会 404 并永久卡在「引擎准备中」。 */
   window.VERITY_RUNTIME_BASE = "../";
 </script>
-<script src="family-api.e0.32.0.js"></script>
-<script src="family-boot.e0.32.0.js"></script>
-<script src="../wx-tip.e0.32.0.js"></script>
+<script src="family-api.e0.34.0.js"></script>
+<script src="family-boot.e0.34.0.js"></script>
+<script src="../wx-tip.e0.34.0.js"></script>
 </body>
 </html>
