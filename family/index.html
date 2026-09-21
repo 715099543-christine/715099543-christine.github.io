@@ -475,14 +475,30 @@
 <meta name="apple-mobile-web-app-title" content="Verity AI家庭CFO" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="stylesheet" href="../styles.e0.37.0.css" />
-<link rel="stylesheet" href="../zh.e0.37.0.css" />
-<link rel="stylesheet" href="family.e0.37.0.css" />
-<link rel="stylesheet" href="../family-insurance.e0.37.0.css" />
+<link rel="stylesheet" href="../styles.e0.38.0.css" />
+<link rel="stylesheet" href="../zh.e0.38.0.css" />
+<link rel="stylesheet" href="family.e0.38.0.css" />
+<link rel="stylesheet" href="../family-insurance.e0.38.0.css" />
+<script>
+/* r76 P0：闸门默认可见（启动脚本失败时用户至少能看到登录/注册入口）。
+   已登录设备在这里提前隐掉闸门，避免闪一下登录页；读不到标记就按未登录处理。 */
+(function () {
+  try {
+    if (window.localStorage && window.localStorage.getItem("verity.zh.device.v1")) {
+      document.documentElement.classList.add("family-session");
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 
-<div id="family-gate" class="hidden" role="dialog" aria-modal="true" aria-label="Verity 家庭CFO 账号">
+<!-- r76 P0：闸门不再默认 hidden。历史缺陷：静态 HTML 里 #family-gate 带 class="hidden"、
+     控制台内容又被 html.family-locked 隐掉，于是「首屏可见内容」100% 依赖 family-boot.js 成功启动；
+     启动脚本延迟、被拦、解析失败（旧引擎 / 弱网 / 运营商拦截 / 陈旧 Service Worker 缓存）
+     都表现为纯白屏且没有任何提示 —— 用户只会说「打不开」。
+     现在登录/注册入口默认可见；已登录设备由 html.family-session 在首屏前隐掉闸门，避免闪一下登录页。 -->
+<div id="family-gate" role="dialog" aria-modal="true" aria-label="Verity 家庭CFO 账号">
   <div class="gate-wrap">
     <div class="gate-brand">
       <div class="gate-mark" aria-hidden="true">V</div>
@@ -597,6 +613,95 @@
   <span id="cloud-who"></span>
   <button type="button" id="cloud-logout">退出登录</button>
 </div>
+
+<!-- r76 P0：启动失败兜底面板。闸门默认可见（用户至少能看见登录/注册），
+     但表单要能真正工作仍然依赖 family-boot.js 启动；启动失败时给一条用户自己就能走的恢复路径。 -->
+<div id="boot-recover" class="hidden" role="alert" aria-live="assertive" aria-label="应用载入失败">
+  <div class="boot-recover-card">
+    <strong>应用没能正常载入</strong>
+    <p class="gate-sub">
+      常见原因：网络不稳、浏览器拦下了脚本、或本机缓存里存着旧版本。<br />
+      请先点「重新载入」；若反复出现，再点「清除本机缓存并重新载入」——
+      它只清这台设备上的离线缓存与自动登录，<strong>云端家庭档案不会被删除</strong>，用口令登录即可取回。
+    </p>
+    <button type="button" id="boot-reload">重新载入</button>
+    <button type="button" id="boot-clear">清除本机缓存并重新载入</button>
+    <p class="gate-sub" id="boot-recover-detail"></p>
+  </div>
+</div>
+
+<noscript id="noscript-notice">
+  <div class="boot-recover-card">
+    <strong>这个浏览器没有运行 JavaScript，Verity 控制台无法启动。</strong>
+    <p class="gate-sub">
+      请在浏览器设置中启用 JavaScript 后重新打开本页；或改用最新版 Chrome / Safari / 华为浏览器 /
+      微信内置浏览器打开 https://verityready.com/family/ 。
+    </p>
+    <p class="gate-sub">Your browser is not running JavaScript, so Verity cannot start. Please enable JavaScript and reload.</p>
+  </div>
+</noscript>
+
+<script>
+/* r76 P0：首屏兜底看门狗（ES5，不依赖任何构建期工具）。
+   启动脚本在 12 秒内没有报到，就说明这一屏靠自己是走不通的：
+   给出「重新载入 / 清除本机缓存并重新载入」两个用户可执行的动作，并同时解除
+   html.family-session（否则已登录设备会看到一个没有闸门也没有控制台的死页面）。 */
+(function () {
+  var timer = null;
+  var fired = false;
+  function bootOk() {
+    window.__verityBooted = true;
+    if (timer) { clearTimeout(timer); timer = null; }
+    var panel = document.getElementById("boot-recover");
+    if (panel) panel.className = "hidden";
+  }
+  window.__verityBootOk = bootOk;
+  function showRecover() {
+    if (window.__verityBooted) return;
+    var panel = document.getElementById("boot-recover");
+    if (!panel) return;
+    fired = true;
+    panel.className = "";
+    try {
+      if (document.documentElement.classList) document.documentElement.classList.remove("family-session");
+    } catch (e) {}
+    var detail = document.getElementById("boot-recover-detail");
+    if (detail) {
+      detail.textContent = "已等待 12 秒仍未启动完成。当前浏览器：" + (navigator.userAgent || "未知");
+    }
+  }
+  timer = setTimeout(showRecover, 12000);
+  function clearLocalAndReload(button) {
+    button.disabled = true;
+    button.textContent = "正在清理…";
+    var jobs = [];
+    try {
+      if (window.caches && caches.keys) {
+        jobs.push(caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+    } catch (e) {}
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); }));
+        }));
+      }
+    } catch (e) {}
+    try { window.localStorage.removeItem("verity.zh.device.v1"); } catch (e) {}
+    var done = function () { window.location.reload(); };
+    if (!jobs.length) { done(); return; }
+    Promise.all(jobs).then(done, done);
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    var reload = document.getElementById("boot-reload");
+    if (reload) reload.onclick = function () { window.location.reload(); };
+    var clear = document.getElementById("boot-clear");
+    if (clear) clear.onclick = function () { clearLocalAndReload(clear); };
+  });
+})();
+</script>
 
 
 <div class="banner">Verity 提供决策支持｜<a href="../terms.html">安全与免责声明</a></div>
@@ -1138,9 +1243,9 @@
      必须显式回退一级，否则运行时请求会 404 并永久卡在「引擎准备中」。 */
   window.VERITY_RUNTIME_BASE = "../";
 </script>
-<script src="family-api.e0.37.0.js"></script>
-<script src="family-boot.e0.37.0.js"></script>
-<script src="../bottom-tip.e0.37.0.js"></script>
-<script src="../wx-tip.e0.37.0.js"></script>
+<script src="family-api.e0.38.0.js"></script>
+<script src="family-boot.e0.38.0.js"></script>
+<script src="../bottom-tip.e0.38.0.js"></script>
+<script src="../wx-tip.e0.38.0.js"></script>
 </body>
 </html>
