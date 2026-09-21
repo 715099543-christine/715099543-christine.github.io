@@ -401,7 +401,10 @@ section[id], #results { scroll-margin-top: calc(var(--sticky-header-h) + 16px); 
 #sec-index-hint { margin-top: 10px; }
 
 @media (min-width: 761px) {
-  #sec-nav { right: 20px; bottom: 20px; }
+  /* 桌面端同样是右下角：提示条（宽 420px，right:22px）与这两个 FAB 几乎重叠，
+     所以窄屏那条让位规则必须在这里再写一次，否则媒体查询会把 --bottom-tip-h 顶掉。
+     （r71 实测发现：只写窄屏时，1200px 宽下 #sec-nav 的 computed bottom 仍是 20px。） */
+  #sec-nav { right: 20px; bottom: calc(20px + var(--bottom-tip-h, 0px)); }
   #sec-index-panel {
     left: auto; right: 20px; bottom: 20px; width: 420px;
     border: 1px solid var(--line); border-radius: 14px;

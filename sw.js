@@ -15,31 +15,31 @@
  */
 
 /* 唯一来源 web/version.json；改这里必须同步那里（tests/test_version_sot.py 守住）。 */
-const PRODUCT_VERSION = "e0.35.0";
+const PRODUCT_VERSION = "e0.36.0";
 const CACHE_SCHEMA = "r49-p0-hashed-assets";
 const SHELL_CACHE = `verity-zh-shell-v${PRODUCT_VERSION}-${CACHE_SCHEMA}`;
 
 const SHELL_ASSETS = [
   "./index.html",
-  "./landing.e0.35.0.css",
-  "./install-prompt.e0.35.0.js",
+  "./landing.e0.36.0.css",
+  "./install-prompt.e0.36.0.js",
   "./family/index.html",
-  "./family/family.e0.35.0.css",
-  "./family/family-api.e0.35.0.js",
-  "./family/family-boot.e0.35.0.js",
+  "./family/family.e0.36.0.css",
+  "./family/family-api.e0.36.0.js",
+  "./family/family-boot.e0.36.0.js",
   "./family/manifest.webmanifest",
-  "./family-insurance.e0.35.0.js",
-  "./family-insurance.e0.35.0.css",
-  "./voice-nlu.e0.35.0.js",
-  "./chat-dock.e0.35.0.js",
-  "./bottom-tip.e0.35.0.js",
-  "./wx-tip.e0.35.0.js",
-  "./family/voice-builder.e0.35.0.js",
+  "./family-insurance.e0.36.0.js",
+  "./family-insurance.e0.36.0.css",
+  "./voice-nlu.e0.36.0.js",
+  "./chat-dock.e0.36.0.js",
+  "./bottom-tip.e0.36.0.js",
+  "./wx-tip.e0.36.0.js",
+  "./family/voice-builder.e0.36.0.js",
   "./hk-insurance-products.json",
-  "./zh.e0.35.0.js",
-  "./zh.e0.35.0.css",
-  "./styles.e0.35.0.css",
-  "./verity-digest.e0.35.0.js",
+  "./zh.e0.36.0.js",
+  "./zh.e0.36.0.css",
+  "./styles.e0.36.0.css",
+  "./verity-digest.e0.36.0.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
